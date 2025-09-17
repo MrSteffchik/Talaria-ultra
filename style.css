@@ -1,25 +1,163 @@
-header, footer {
-    background-color: #ff4081;
-    color: white;
-    padding: 15px;
-  }
-  
-  section {
-    padding: 15px;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  article {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-top: 10px;
-  }
-  
-  aside {
-    background-color: #f5f5f5;
-    padding: 15px;
-  }
-  
-  footer {
-    text-align: center;
-  }
+/* ====== Общие стили ====== */
+body {
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #fafafa;
+  color: #333;
+  line-height: 1.6;
+}
+
+h1, h2, h3 {
+  margin: 0 0 15px;
+  font-weight: 600;
+}
+
+p {
+  margin: 8px 0;
+}
+
+ul, ol {
+  padding-left: 20px;
+}
+
+/* ====== Шапка ====== */
+header {
+  background: #fff;
+  padding: 20px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 {
+  font-size: 28px;
+  color: #b22222; /* Красный акцент */
+  letter-spacing: 2px;
+}
+
+nav ul {
+  list-style: none;
+  margin: 0;
+  display: flex;
+  gap: 25px;
+}
+
+nav a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+nav a:hover {
+  color: #b22222;
+  border-bottom: 2px solid #b22222;
+  padding-bottom: 3px;
+}
+
+/* ====== Основной контент ====== */
+main {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+section {
+  margin-bottom: 60px;
+}
+
+#home {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 60px 0;
+  background: linear-gradient(120deg, #fceabb, #f8b500);
+  border-radius: 12px;
+  color: #222;
+}
+
+/* Коллекция */
+#collec article {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-top: 20px;
+  transition: 0.3s;
+}
+
+#collec article:hover {
+  transform: translateY(-5px);
+}
+
+#collec h2 {
+  color: #b22222;
+}
+
+/* О нас */
+#about ol {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+}
+
+#about li {
+  margin: 10px 0;
+}
+
+/* Контакты */
+#contacts {
+  background: #fdfdfd;
+  border-left: 5px solid #b22222;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+#contacts h1 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #b22222;
+}
+
+/* Полезная информация */
+#information {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 20px;
+  background: #eee;
+  border-radius: 12px;
+}
+
+/* ====== Подвал ====== */
+footer {
+  background: #333;
+  color: #fff;
+  padding: 30px 20px;
+  text-align: center;
+}
+
+footer ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+
+footer a {
+  text-decoration: none;
+  color: #fff;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+footer a:hover {
+  color: #f8b500;
+}
