@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="keywords"
+            content="Обувь, женская обувь больших размеров, Talaria, талариа, ТАЛАРИА, земфира магазин, удобная обувь, купить обувь в ташкенте, ZAZA, евромода, робин, мисс марис, vacs, Турция, Пекин"
+        />
+        <meta
+            name="description"
+            content="Детальная информация о товаре в магазине Talaria - премиальная женская обувь больших размеров"
+        />
+
+        <title id="page-title">
+            Товар - Talaria | Премиальная женская обувь
+        </title>
+
+        <!-- Preconnect for performance -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <!-- Google Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Styles -->
+        <link href="style.css" rel="stylesheet" />
+
+        <!-- Additional styles for product page -->
+        <style>
+            .breadcrumb {
+                background: var(--background-white);
+                padding: 1rem 0;
+                border-bottom: 1px solid var(--border-light);
+                margin-bottom: 2rem;
+            }
+
+            .breadcrumb-list {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+                list-style: none;
+                color: var(--text-light);
+                font-size: 14px;
+            }
+
+            .breadcrumb-list a {
+                color: var(--accent-color);
+                text-decoration: none;
+            }
+
+            .breadcrumb-list a:hover {
+                text-decoration: underline;
+            }
+
+            .product-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 4rem;
+                margin-bottom: 4rem;
+                background: var(--background-white);
+                padding: 3rem;
+                border-radius: 16px;
+                box-shadow: var(--shadow-light);
+                border: 1px solid var(--border-light);
+            }
+
+            .product-gallery {
+                position: relative;
+            }
+
+            .main-image-container {
+                position: relative;
+                width: 100%;
+                height: 500px;
+                border-radius: 16px;
+                overflow: hidden;
+                background: var(--background-light);
+                margin-bottom: 1rem;
+            }
+
+            .main-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: var(--transition);
+            }
+
+            .main-image:hover {
+                transform: scale(1.05);
+            }
+
+            .image-fallback-large {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 6rem;
+                color: var(--text-muted);
+                background: var(--background-light);
+            }
+
+            .product-info {
+                position: sticky;
+                top: 120px;
+                height: fit-content;
+            }
+
+            .product-brand {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 1rem;
+                color: var(--accent-color);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 1rem;
+            }
+
+            .product-title {
+                font-size: 2.5rem;
+                font-weight: 800;
+                color: var(--primary-color);
+                line-height: 1.2;
+                margin-bottom: 1.5rem;
+            }
+
+            .product-description {
+                font-size: 1.125rem;
+                color: var(--text-light);
+                line-height: 1.6;
+                margin-bottom: 2rem;
+            }
+
+            .product-price {
+                display: flex;
+                align-items: baseline;
+                gap: 1rem;
+                margin-bottom: 2rem;
+                padding: 1.5rem;
+                background: var(--background-light);
+                border-radius: 12px;
+                border: 2px solid var(--accent-color);
+            }
+
+            .price-current {
+                font-size: 2.5rem;
+                font-weight: 900;
+                color: var(--primary-color);
+            }
+
+            .price-old {
+                font-size: 1.5rem;
+                color: var(--text-muted);
+                text-decoration: line-through;
+            }
+
+            .price-discount {
+                background: #e74c3c;
+                color: white;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .product-features {
+                margin-bottom: 2rem;
+            }
+
+            .features-title {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: var(--primary-color);
+                margin-bottom: 1rem;
+            }
+
+            .features-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .feature-item {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem;
+                background: rgba(212, 175, 55, 0.1);
+                border-radius: 8px;
+                font-size: 14px;
+                color: var(--text-dark);
+            }
+
+            .feature-icon {
+                font-size: 1.25rem;
+            }
+
+            .product-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
+
+            .btn-primary {
+                background: var(--gradient-gold);
+                color: white;
+                border: none;
+                padding: 1rem 2rem;
+                border-radius: 12px;
+                font-size: 1.125rem;
+                font-weight: 700;
+                cursor: pointer;
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.75rem;
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-heavy);
+            }
+
+            .btn-secondary {
+                background: transparent;
+                color: var(--accent-color);
+                border: 2px solid var(--accent-color);
+                padding: 1rem 2rem;
+                border-radius: 12px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.75rem;
+            }
+
+            .btn-secondary:hover {
+                background: var(--accent-color);
+                color: white;
+                transform: translateY(-1px);
+            }
+
+            .contact-info {
+                background: var(--gradient-brown);
+                color: white;
+                padding: 2rem;
+                border-radius: 12px;
+                margin-top: 2rem;
+            }
+
+            .contact-title {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 1rem;
+                color: var(--accent-color);
+            }
+
+            .contact-methods {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .contact-method {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.75rem;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                transition: var(--transition);
+            }
+
+            .contact-method:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: translateX(5px);
+            }
+
+            .contact-method a {
+                color: var(--accent-color);
+                font-weight: 500;
+                text-decoration: none;
+            }
+
+            .contact-method a:hover {
+                color: white;
+            }
+
+            .loading-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 400px;
+                text-align: center;
+            }
+
+            .loading-spinner {
+                font-size: 3rem;
+                animation: spin 2s linear infinite;
+                margin-bottom: 1rem;
+            }
+
+            .error-container {
+                text-align: center;
+                padding: 4rem 2rem;
+                color: var(--text-muted);
+            }
+
+            .error-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+            }
+
+            .back-button {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                color: var(--accent-color);
+                font-weight: 500;
+                text-decoration: none;
+                padding: 0.75rem 1.5rem;
+                border: 2px solid var(--accent-color);
+                border-radius: 25px;
+                transition: var(--transition);
+                margin-bottom: 2rem;
+            }
+
+            .back-button:hover {
+                background: var(--accent-color);
+                color: white;
+            }
+
+            @media (max-width: 768px) {
+                .product-container {
+                    grid-template-columns: 1fr;
+                    gap: 2rem;
+                    padding: 1.5rem;
+                }
+
+                .main-image-container {
+                    height: 400px;
+                }
+
+                .product-title {
+                    font-size: 2rem;
+                }
+
+                .price-current {
+                    font-size: 2rem;
+                }
+
+                .features-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .product-info {
+                    position: static;
+                }
+            }
+        </style>
+
+        <!-- Scripts -->
+        <script src="config.js"></script>
+        <script src="api.js"></script>
+
+        <!-- Favicon -->
+        <link
+            rel="icon"
+            type="image/x-icon"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👠</text></svg>"
+        />
+    </head>
+    <body>
+        <!-- Header -->
+        <header>
+            <div class="header-top">
+                <div class="header-container">
+                    🎉 Скидки до 30% на новую коллекцию!
+                    <a href="index.html#collec">Смотреть сейчас →</a>
+                </div>
+            </div>
+
+            <div class="header-main">
+                <div class="header-container">
+                    <div class="logo-section">
+                        <a href="index.html" style="text-decoration: none">
+                            <div class="logo">Talaria</div>
+                            <div class="logo-subtitle">
+                                Premium Women's Shoes
+                            </div>
+                        </a>
+                    </div>
+
+                    <nav>
+                        <ul class="nav-main">
+                            <li><a href="index.html#home">Главная</a></li>
+                            <li><a href="index.html#collec">Каталог</a></li>
+                            <li><a href="index.html#brands">Бренды</a></li>
+                            <li><a href="index.html#about">О нас</a></li>
+                            <li><a href="index.html#contacts">Контакты</a></li>
+                        </ul>
+                    </nav>
+
+                    <div class="header-actions">
+                        <button class="action-btn">❤️ Избранное</button>
+                        <button class="action-btn primary">
+                            📞 Консультация
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Breadcrumb -->
+        <section class="breadcrumb">
+            <div class="header-container">
+                <ul class="breadcrumb-list">
+                    <li><a href="index.html">Главная</a></li>
+                    <li>›</li>
+                    <li><a href="index.html#collec">Каталог</a></li>
+                    <li>›</li>
+                    <li id="breadcrumb-current">Загрузка...</li>
+                </ul>
+            </div>
+        </section>
+
+        <main>
+            <div class="header-container">
+                <a href="index.html#collec" class="back-button">
+                    ← Вернуться к каталогу
+                </a>
+
+                <!-- Loading State -->
+                <div id="loading-container" class="loading-container">
+                    <div class="loading-spinner">⏳</div>
+                    <h2>Загрузка информации о товаре...</h2>
+                    <p>Пожалуйста, подождите</p>
+                </div>
+
+                <!-- Error State -->
+                <div
+                    id="error-container"
+                    class="error-container"
+                    style="display: none"
+                >
+                    <div class="error-icon">😔</div>
+                    <h2>Товар не найден</h2>
+                    <p>Возможно, товар был удален или ссылка неверная</p>
+                    <a href="index.html#collec" class="btn-primary">
+                        Перейти к каталогу
+                    </a>
+                </div>
+
+                <!-- Product Content -->
+                <div id="product-content" style="display: none">
+                    <div class="product-container">
+                        <!-- Product Gallery -->
+                        <div class="product-gallery">
+                            <div class="main-image-container">
+                                <img
+                                    id="main-image"
+                                    class="main-image"
+                                    alt=""
+                                    style="display: none"
+                                />
+                                <div
+                                    id="image-fallback"
+                                    class="image-fallback-large"
+                                >
+                                    👠
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Info -->
+                        <div class="product-info">
+                            <div class="product-brand" id="product-brand">
+                                <span>⭐</span>
+                                <span>Premium</span>
+                            </div>
+
+                            <h1 class="product-title" id="product-title">
+                                Загрузка...
+                            </h1>
+
+                            <p
+                                class="product-description"
+                                id="product-description"
+                            >
+                                Премиальная женская обувь из натуральных
+                                материалов. Тщательно отобранная коллекция от
+                                ведущих производителей Турции и Пекина для
+                                максимального комфорта и стиля.
+                            </p>
+
+                            <div class="product-price" id="product-price">
+                                <span class="price-current">0 сум</span>
+                            </div>
+
+                            <div class="product-features">
+                                <h3 class="features-title">
+                                    Особенности товара
+                                </h3>
+                                <div class="features-grid" id="features-grid">
+                                    <div class="feature-item">
+                                        <span class="feature-icon">✨</span>
+                                        <span>Премиальные материалы</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <span class="feature-icon">👟</span>
+                                        <span>Комфортная подошва</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <span class="feature-icon">🌟</span>
+                                        <span>Стильный дизайн</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <span class="feature-icon">🔥</span>
+                                        <span>Трендовая модель</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="product-actions">
+                                <button class="btn-primary" id="order-button">
+                                    📞 Заказать по телефону
+                                </button>
+                                <button
+                                    class="btn-secondary"
+                                    id="favorite-button"
+                                >
+                                    ❤️ Добавить в избранное
+                                </button>
+                                <button class="btn-secondary" id="share-button">
+                                    📤 Поделиться
+                                </button>
+                            </div>
+
+                            <div class="contact-info">
+                                <h3 class="contact-title">
+                                    📞 Связаться с нами
+                                </h3>
+                                <div class="contact-methods">
+                                    <div class="contact-method">
+                                        <span>📱</span>
+                                        <div>
+                                            <strong>Телефон:</strong><br />
+                                            <a href="tel:+998908257337"
+                                                >+998 90 825 73 37</a
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="contact-method">
+                                        <span>💬</span>
+                                        <div>
+                                            <strong>Telegram:</strong><br />
+                                            <a
+                                                href="https://t.me/talariaUz"
+                                                target="_blank"
+                                                >@talariaUz</a
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="contact-method">
+                                        <span>📷</span>
+                                        <div>
+                                            <strong>Instagram:</strong><br />
+                                            <a
+                                                href="https://www.instagram.com/talaria_by_zemfira"
+                                                target="_blank"
+                                                >@talaria_by_zemfira</a
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="contact-method">
+                                        <span>📍</span>
+                                        <div>
+                                            <strong>Адрес:</strong><br />
+                                            Ул. Мирзо Улугбека, д.99
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-container">
+                <div class="footer-main">
+                    <div class="footer-brand">
+                        <div class="footer-logo">Talaria</div>
+                        <p class="footer-description">
+                            Премиальный магазин женской обуви больших размеров в
+                            Ташкенте. Мы создаем комфорт и стиль для особенных
+                            женщин уже более 6 лет.
+                        </p>
+                    </div>
+
+                    <div class="footer-section">
+                        <h4>Каталог</h4>
+                        <ul class="footer-links">
+                            <li><a href="index.html#collec">Новинки</a></li>
+                            <li><a href="index.html#collec">Босоножки</a></li>
+                            <li><a href="index.html#collec">Туфли</a></li>
+                            <li><a href="index.html#collec">Сапоги</a></li>
+                            <li><a href="index.html#collec">Кроссовки</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section">
+                        <h4>Бренды</h4>
+                        <ul class="footer-links">
+                            <li><a href="index.html#brands">ZAZA</a></li>
+                            <li><a href="index.html#brands">Евромода</a></li>
+                            <li><a href="index.html#brands">Робин</a></li>
+                            <li><a href="index.html#brands">Мисс Марис</a></li>
+                            <li><a href="index.html#brands">VACS</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section">
+                        <h4>Поддержка</h4>
+                        <ul class="footer-links">
+                            <li>
+                                <a href="tel:+998908257337">90-825-73-37</a>
+                            </li>
+                            <li>
+                                <a href="https://t.me/talariaUz">Телеграм</a>
+                            </li>
+                            <li>
+                                <a
+                                    href="https://www.instagram.com/talaria_by_zemfira"
+                                    >Instagram</a
+                                >
+                            </li>
+                            <li>
+                                <a href="index.html#contacts">Адрес магазина</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="footer-bottom">
+                    <p>
+                        &copy; 2025 Talaria. Все права защищены. | Женская обувь
+                        больших размеров в Ташкенте
+                    </p>
+                </div>
+            </div>
+        </footer>
+
+        <!-- JavaScript -->
+        <script>
+            // Импорт утилит из основного API файла
+            let currentShoe = null;
+            let shoeId = null;
+            let favorites = JSON.parse(
+                localStorage.getItem("talaria_favorites") || "[]",
+            );
+
+            // Получение ID товара из URL
+            function getShoeIdFromUrl() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get("id");
+            }
+
+            // Загрузка данных товара
+            async function loadShoeData() {
+                const loadingContainer =
+                    document.getElementById("loading-container");
+                const errorContainer =
+                    document.getElementById("error-container");
+                const productContent =
+                    document.getElementById("product-content");
+
+                try {
+                    shoeId = getShoeIdFromUrl();
+
+                    if (!shoeId) {
+                        throw new Error("ID товара не указан");
+                    }
+
+                    // Попытка загрузить из sessionStorage (быстрее)
+                    const cachedShoe = sessionStorage.getItem("current_shoe");
+                    if (cachedShoe) {
+                        const parsedShoe = JSON.parse(cachedShoe);
+                        if (parsedShoe.documentId === shoeId) {
+                            currentShoe = parsedShoe;
+                            renderShoeData();
+                            return;
+                        }
+                    }
+
+                    // Загрузка из API
+                    if (typeof strapiAPI !== "undefined") {
+                        currentShoe = await strapiAPI.fetchShoe(shoeId);
+                        if (currentShoe) {
+                            sessionStorage.setItem(
+                                "current_shoe",
+                                JSON.stringify(currentShoe),
+                            );
+                            renderShoeData();
+                            return;
+                        }
+                    }
+
+                    throw new Error("Товар не найден");
+                } catch (error) {
+                    console.error("Ошибка загрузки товара:", error);
+                    loadingContainer.style.display = "none";
+                    errorContainer.style.display = "block";
+                }
+            }
+
+            // Отображение данных товара
+            function renderShoeData() {
+                const loadingContainer =
+                    document.getElementById("loading-container");
+                const productContent =
+                    document.getElementById("product-content");
+
+                if (!currentShoe) return;
+
+                // Скрываем загрузку и показываем контент
+                loadingContainer.style.display = "none";
+                productContent.style.display = "block";
+
+                // Получаем информацию о бренде и цене
+                const brand = getBrand(currentShoe.name);
+                const price = generatePrice();
+
+                // Обновляем заголовок страницы
+                document.title = `${currentShoe.name} - Talaria | Премиальная женская обувь`;
+                document.getElementById("page-title").textContent =
+                    `${currentShoe.name} - Talaria`;
+
+                // Обновляем breadcrumb
+                document.getElementById("breadcrumb-current").textContent =
+                    currentShoe.name;
+
+                // Обновляем изображение
+                const mainImage = document.getElementById("main-image");
+                const imageFallback = document.getElementById("image-fallback");
+
+                if (currentShoe.photo && currentShoe.photo.length > 0) {
+                    const imageUrl = `${CONFIG?.STRAPI_BASE_URL || "http://localhost:1337"}${currentShoe.photo[0].formats?.large?.url || currentShoe.photo[0].url}`;
+                    mainImage.src = imageUrl;
+                    mainImage.alt = currentShoe.name;
+                    mainImage.style.display = "block";
+                    imageFallback.style.display = "none";
+
+                    mainImage.onerror = function () {
+                        this.style.display = "none";
+                        imageFallback.style.display = "flex";
+                    };
+                } else {
+                    imageFallback.style.display = "flex";
+                }
+
+                // Обновляем информацию о товаре
+                document.getElementById("product-brand").innerHTML =
+                    `<span>${brand.icon}</span><span>${brand.name}</span>`;
+                document.getElementById("product-title").textContent =
+                    currentShoe.name;
+
+                // Обновляем цену
+                const priceContainer = document.getElementById("product-price");
+                let priceHTML = `<span class="price-current">${formatPrice(price.current)} сум</span>`;
+                if (price.old) {
+                    priceHTML += `<span class="price-old">${formatPrice(price.old)} сум</span>`;
+                }
+                if (price.discount) {
+                    priceHTML += `<span class="price-discount">-${price.discount}%</span>`;
+                }
+                priceContainer.innerHTML = priceHTML;
+
+                // Обновляем особенности товара
+                const features = getFeatures(currentShoe.name);
+                const featuresGrid = document.getElementById("features-grid");
+                featuresGrid.innerHTML = features
+                    .map(
+                        (feature) => `
+                    <div class="feature-item">
+                        <span class="feature-icon">✨</span>
+                        <span>${feature}</span>
+                    </div>
+                `,
+                    )
+                    .join("");
+
+                // Обновляем кнопку избранного
+                updateFavoriteButton();
+            }
+
+            // Утилиты (копии из основного файла)
+            function getBrand(name) {
+                const brands = {
+                    ZAZA: { name: "ZAZA", icon: "👑" },
+                    евромода: { name: "Евромода", icon: "✨" },
+                    робин: { name: "Робин", icon: "🌟" },
+                    марис: { name: "Мисс Марис", icon: "💎" },
+                    vacs: { name: "VACS", icon: "🔥" },
+                };
+
+                const lowerName = name.toLowerCase();
+                for (const [key, brand] of Object.entries(brands)) {
+                    if (lowerName.includes(key.toLowerCase())) {
+                        return brand;
+                    }
+                }
+
+                return { name: "Premium", icon: "⭐" };
+            }
+
+            function getFeatures(name) {
+                const features = [
+                    "Премиальные материалы",
+                    "Комфортная подошва",
+                ];
+                const lowerName = name.toLowerCase();
+
+                if (
+                    lowerName.includes("босоножки") ||
+                    lowerName.includes("сандали")
+                ) {
+                    features.push("Летняя коллекция");
+                }
+                if (lowerName.includes("туфли")) {
+                    features.push("Классический стиль");
+                }
+                if (
+                    lowerName.includes("сапоги") ||
+                    lowerName.includes("ботинки")
+                ) {
+                    features.push("Зимняя коллекция");
+                }
+                if (lowerName.includes("кроссовки")) {
+                    features.push("Спортивный стиль");
+                }
+
+                features.push("Стильный дизайн");
+                return features;
+            }
+
+            function generatePrice() {
+                const basePrice = Math.floor(Math.random() * 500000) + 200000;
+                const hasDiscount = Math.random() > 0.7;
+
+                if (hasDiscount) {
+                    const discount = Math.floor(Math.random() * 30) + 10;
+                    const discountPrice = Math.floor(
+                        (basePrice * (100 - discount)) / 100,
+                    );
+                    return {
+                        current: discountPrice,
+                        old: basePrice,
+                        discount: discount,
+                    };
+                }
+
+                return {
+                    current: basePrice,
+                    old: null,
+                    discount: null,
+                };
+            }
+
+            function formatPrice(price) {
+                return new Intl.NumberFormat("uz-UZ", {
+                    style: "decimal",
+                    minimumFractionDigits: 0,
+                }).format(price);
+            }
+
+            // Обработчики событий
+            function toggleFavorite() {
+                if (!shoeId) return;
+
+                const favoriteButton =
+                    document.getElementById("favorite-button");
+                const index = favorites.indexOf(shoeId);
+
+                if (index > -1) {
+                    favorites.splice(index, 1);
+                    favoriteButton.innerHTML = "❤️ Добавить в избранное";
+                    showNotification("Удалено из избранного! 💔");
+                } else {
+                    favorites.push(shoeId);
+                    favoriteButton.innerHTML = "💖 В избранном";
+                    showNotification("Добавлено в избранное! ❤️");
+                }
+
+                localStorage.setItem(
+                    "talaria_favorites",
+                    JSON.stringify(favorites),
+                );
+                updateFavoriteButton();
+            }
+
+            function updateFavoriteButton() {
+                if (!shoeId) return;
+
+                const favoriteButton =
+                    document.getElementById("favorite-button");
+                if (favorites.includes(shoeId)) {
+                    favoriteButton.innerHTML = "💖 В избранном";
+                    favoriteButton.style.background = "var(--accent-color)";
+                    favoriteButton.style.color = "white";
+                } else {
+                    favoriteButton.innerHTML = "❤️ Добавить в избранное";
+                    favoriteButton.style.background = "transparent";
+                    favoriteButton.style.color = "var(--accent-color)";
+                }
+            }
+
+            function makeOrder() {
+                if (!currentShoe) return;
+
+                const orderText = `Здравствуйте! Меня интересует ${currentShoe.name}. Можете предоставить подробную информацию о размерах и наличии?`;
+                const phoneNumber = "+998908257337";
+                const telegramUrl = `https://t.me/talariaUz`;
+
+                // Показываем выбор способа связи
+                const choice = confirm(
+                    "Как вы хотите связаться?\n\nОК - Позвонить\nОтмена - Написать в Telegram",
+                );
+
+                if (choice) {
+                    window.location.href = `tel:${phoneNumber}`;
+                } else {
+                    window.open(telegramUrl, "_blank");
+                }
+            }
+
+            function shareProduct() {
+                if (!currentShoe) return;
+
+                const shareData = {
+                    title: `${currentShoe.name} - Talaria`,
+                    text: `Посмотрите на эту красивую обувь в магазине Talaria!`,
+                    url: window.location.href,
+                };
+
+                if (navigator.share) {
+                    navigator.share(shareData);
+                } else {
+                    // Fallback для браузеров без Web Share API
+                    const url = encodeURIComponent(window.location.href);
+                    const text = encodeURIComponent(
+                        `${currentShoe.name} - Talaria`,
+                    );
+
+                    const shareOptions = [
+                        {
+                            name: "Telegram",
+                            url: `https://t.me/share/url?url=${url}&text=${text}`,
+                        },
+                        {
+                            name: "WhatsApp",
+                            url: `https://wa.me/?text=${text}%20${url}`,
+                        },
+                        { name: "Скопировать ссылку", action: "copy" },
+                    ];
+
+                    const choice = prompt(
+                        "Выберите способ поделиться:\n1. Telegram\n2. WhatsApp\n3. Скопировать ссылку\n\nВведите номер (1-3):",
+                    );
+
+                    switch (choice) {
+                        case "1":
+                            window.open(shareOptions[0].url, "_blank");
+                            break;
+                        case "2":
+                            window.open(shareOptions[1].url, "_blank");
+                            break;
+                        case "3":
+                            navigator.clipboard
+                                .writeText(window.location.href)
+                                .then(() => {
+                                    showNotification("Ссылка скопирована! 📋");
+                                });
+                            break;
+                    }
+                }
+            }
+
+            function showNotification(message) {
+                const notification = document.createElement("div");
+                notification.className = "notification";
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <span>${message}</span>
+                        <button onclick="this.parentElement.parentElement.remove()">×</button>
+                    </div>
+                `;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 100px;
+                    right: 20px;
+                    background: var(--gradient-gold);
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 10px;
+                    box-shadow: var(--shadow-heavy);
+                    z-index: 10000;
+                    animation: slideInRight 0.3s ease;
+                `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.style.animation =
+                            "slideOutRight 0.3s ease";
+                        setTimeout(() => notification.remove(), 300);
+                    }
+                }, 3000);
+            }
+
+            // Обработчики событий
+            document.addEventListener("DOMContentLoaded", function () {
+                loadShoeData();
+
+                // Привязка событий к кнопкам
+                document
+                    .getElementById("order-button")
+                    .addEventListener("click", makeOrder);
+                document
+                    .getElementById("favorite-button")
+                    .addEventListener("click", toggleFavorite);
+                document
+                    .getElementById("share-button")
+                    .addEventListener("click", shareProduct);
+
+                // Smooth scrolling для ссылок навигации
+                document
+                    .querySelectorAll('a[href^="#"], a[href*="#"]')
+                    .forEach((anchor) => {
+                        anchor.addEventListener("click", function (e) {
+                            const href = this.getAttribute("href");
+                            if (
+                                href.includes("#") &&
+                                !href.includes("index.html")
+                            ) {
+                                e.preventDefault();
+                            }
+                        });
+                    });
+            });
+
+            // Стили для анимаций
+            const styles = document.createElement("style");
+            styles.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+
+                @keyframes slideOutRight {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 10px;
+                }
+
+                .notification-content button {
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 18px;
+                    cursor: pointer;
+                    padding: 0;
+                    width: 20px;
+                    height: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            `;
+            document.head.appendChild(styles);
+        </script>
+    </body>
+</html>

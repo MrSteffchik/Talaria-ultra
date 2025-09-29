@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест API подключения - Talaria</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #b22222;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        button {
+            background: #b22222;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #a01e1e;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .config-display {
+            background: #e2e3e5;
+            border: 1px solid #d6d8db;
+            color: #383d41;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-ok { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тест API подключения Talaria</h1>
+
+        <div class="test-section">
+            <div class="test-title">📋 Текущая конфигурация</div>
+            <div id="config-display" class="config-display">Загрузка конфигурации...</div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">
+                <span id="connection-status" class="status-indicator status-warning"></span>
+                🔗 Проверка подключения к Strapi
+            </div>
+            <button onclick="testConnection()">Проверить подключение</button>
+            <button onclick="testWithoutAuth()">Тест без авторизации</button>
+            <div id="connection-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">
+                <span id="api-status" class="status-indicator status-warning"></span>
+                📦 Тест API /shoes
+            </div>
+            <button onclick="testShoesAPI()">Загрузить товары</button>
+            <button onclick="testShoesAPIDetailed()">Подробный тест</button>
+            <div id="api-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🖼️ Тест загрузки изображений</div>
+            <button onclick="testImages()">Проверить изображения</button>
+            <div id="images-result" class="result" style="display: none;"></div>
+            <div id="images-preview" style="margin-top: 15px;"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">⚡ Тест производительности</div>
+            <button onclick="performanceTest()">Запустить тест</button>
+            <div id="performance-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Конфигурация для тестирования
+        const TEST_CONFIG = {
+            STRAPI_BASE_URL: 'http://localhost:1337',
+            API_TOKEN: '4d517983794bd6eeaf62f96682ff0003038308f3c0f22d00f5a184d0bcb69d31c41baa4c3efdc6f3321e9d5f1bac524fd0c887c257207b570f2df9e60972d9d50229a85ab541359f4b5135fd873ce73f6dace07fe0655c8b385fdbcb33218e3fb144f63cf0e1c95cbe36e5d5c4eb8ebb2d7d4aed2987d2e74d035887d58a14a8'
+        };
+
+        // Отображение конфигурации
+        function displayConfig() {
+            const configDisplay = document.getElementById('config-display');
+            configDisplay.innerHTML = `
+<strong>Strapi URL:</strong> ${TEST_CONFIG.STRAPI_BASE_URL}
+<strong>API Token:</strong> ${TEST_CONFIG.API_TOKEN.substring(0, 20)}...${TEST_CONFIG.API_TOKEN.slice(-10)}
+<strong>Endpoints:</strong>
+  - GET /api/shoes?populate=*
+  - GET /api/shoes/:id?populate=*
+            `;
+        }
+
+        // Утилиты для отображения результатов
+        function showResult(elementId, content, type = 'loading') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = content;
+        }
+
+        function updateStatus(statusId, status) {
+            const statusElement = document.getElementById(statusId);
+            statusElement.className = `status-indicator status-${status}`;
+        }
+
+        // Тест базового подключения
+        async function testConnection() {
+            showResult('connection-result', 'Проверка подключения к серверу...', 'loading');
+
+            try {
+                const response = await fetch(TEST_CONFIG.STRAPI_BASE_URL, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                if (response.ok) {
+                    showResult('connection-result', `✅ Успешное подключение к ${TEST_CONFIG.STRAPI_BASE_URL}
+Статус: ${response.status} ${response.statusText}
+Тип контента: ${response.headers.get('content-type') || 'Не указан'}`, 'success');
+                    updateStatus('connection-status', 'ok');
+                } else {
+                    showResult('connection-result', `⚠️ Сервер ответил с ошибкой: ${response.status} ${response.statusText}`, 'error');
+                    updateStatus('connection-status', 'error');
+                }
+            } catch (error) {
+                showResult('connection-result', `❌ Ошибка подключения: ${error.message}
+
+Возможные причины:
+- Strapi сервер не запущен
+- Неправильный URL в конфигурации
+- CORS блокировка
+- Проблемы с сетью`, 'error');
+                updateStatus('connection-status', 'error');
+            }
+        }
+
+        // Тест без авторизации
+        async function testWithoutAuth() {
+            showResult('connection-result', 'Тест доступа без авторизации...', 'loading');
+
+            try {
+                const response = await fetch(`${TEST_CONFIG.STRAPI_BASE_URL}/api/shoes`);
+
+                showResult('connection-result', `Ответ без авторизации: ${response.status}
+${response.status === 401 ? '✅ Авторизация работает корректно (401 Unauthorized)' : '⚠️ Эндпоинт доступен без авторизации'}`,
+                response.status === 401 ? 'success' : 'error');
+            } catch (error) {
+                showResult('connection-result', `Ошибка тестирования: ${error.message}`, 'error');
+            }
+        }
+
+        // Тест API обуви
+        async function testShoesAPI() {
+            showResult('api-result', 'Загрузка товаров из API...', 'loading');
+
+            try {
+                const startTime = performance.now();
+                const response = await fetch(`${TEST_CONFIG.STRAPI_BASE_URL}/api/shoes?populate=*`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_CONFIG.API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const endTime = performance.now();
+                const duration = (endTime - startTime).toFixed(2);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                showResult('api-result', `✅ API работает успешно!
+Время ответа: ${duration}ms
+Количество товаров: ${data.data?.length || 0}
+Структура ответа: ✅ Корректная
+
+${data.data?.length > 0 ? `Пример товара:
+Название: ${data.data[0].name}
+ID: ${data.data[0].documentId}
+Фото: ${data.data[0].photo?.length || 0} изображений` : 'Товары не найдены'}`, 'success');
+                updateStatus('api-status', 'ok');
+            } catch (error) {
+                showResult('api-result', `❌ Ошибка API: ${error.message}`, 'error');
+                updateStatus('api-status', 'error');
+            }
+        }
+
+        // Подробный тест API
+        async function testShoesAPIDetailed() {
+            showResult('api-result', 'Выполнение подробного тестирования API...', 'loading');
+
+            try {
+                const response = await fetch(`${TEST_CONFIG.STRAPI_BASE_URL}/api/shoes?populate=*`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_CONFIG.API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                let detailedInfo = `📊 ПОДРОБНАЯ ИНФОРМАЦИЯ ОБ API:
+
+🔗 URL: ${TEST_CONFIG.STRAPI_BASE_URL}/api/shoes?populate=*
+📦 Количество товаров: ${data.data?.length || 0}
+📄 Структура пагинации: ${JSON.stringify(data.meta?.pagination || 'Отсутствует')}
+
+`;
+
+                if (data.data?.length > 0) {
+                    const firstItem = data.data[0];
+                    detailedInfo += `🎯 АНАЛИЗ ПЕРВОГО ТОВАРА:
+- Название: ${firstItem.name}
+- Document ID: ${firstItem.documentId}
+- Дата создания: ${firstItem.createdAt}
+- Опубликован: ${firstItem.publishedAt ? 'Да' : 'Нет'}
+- Количество фото: ${firstItem.photo?.length || 0}`;
+
+                    if (firstItem.photo?.length > 0) {
+                        const photo = firstItem.photo[0];
+                        detailedInfo += `
+
+📸 ИНФОРМАЦИЯ О ФОТО:
+- Имя файла: ${photo.name}
+- Размер: ${photo.size} KB
+- Размеры: ${photo.width}x${photo.height}
+- Форматы: ${Object.keys(photo.formats || {}).join(', ')}
+- URL: ${photo.url}`;
+                    }
+                } else {
+                    detailedInfo += `
+⚠️  В базе данных нет товаров.
+Убедитесь, что:
+1. В Strapi создана коллекция 'shoes'
+2. Добавлены товары
+3. Товары опубликованы`;
+                }
+
+                showResult('api-result', detailedInfo, 'success');
+            } catch (error) {
+                showResult('api-result', `❌ Ошибка подробного тестирования: ${error.message}`, 'error');
+            }
+        }
+
+        // Тест загрузки изображений
+        async function testImages() {
+            showResult('images-result', 'Тестирование загрузки изображений...', 'loading');
+
+            try {
+                const response = await fetch(`${TEST_CONFIG.STRAPI_BASE_URL}/api/shoes?populate=*`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_CONFIG.API_TOKEN}`
+                    }
+                });
+
+                const data = await response.json();
+                const imagesPreview = document.getElementById('images-preview');
+                imagesPreview.innerHTML = '';
+
+                if (data.data?.length > 0) {
+                    let imageCount = 0;
+                    let loadedCount = 0;
+                    let errorCount = 0;
+
+                    for (const shoe of data.data) {
+                        if (shoe.photo?.length > 0) {
+                            for (const photo of shoe.photo) {
+                                imageCount++;
+                                const imageUrl = `${TEST_CONFIG.STRAPI_BASE_URL}${photo.formats?.thumbnail?.url || photo.url}`;
+
+                                const img = document.createElement('img');
+                                img.src = imageUrl;
+                                img.alt = shoe.name;
+                                img.style.cssText = 'width: 100px; height: 100px; object-fit: cover; margin: 5px; border-radius: 8px; border: 2px solid #eee;';
+
+                                img.onload = () => {
+                                    loadedCount++;
+                                    img.style.borderColor = '#28a745';
+                                    updateImageResult();
+                                };
+
+                                img.onerror = () => {
+                                    errorCount++;
+                                    img.style.borderColor = '#dc3545';
+                                    img.alt = 'Ошибка загрузки';
+                                    updateImageResult();
+                                };
+
+                                imagesPreview.appendChild(img);
+                            }
+                        }
+                    }
+
+                    function updateImageResult() {
+                        if (loadedCount + errorCount === imageCount) {
+                            showResult('images-result',
+                                `🖼️ Тестирование изображений завершено:
+Всего изображений: ${imageCount}
+Успешно загружено: ${loadedCount}
+Ошибки загрузки: ${errorCount}
+Успешность: ${((loadedCount/imageCount)*100).toFixed(1)}%`,
+                                errorCount === 0 ? 'success' : 'error');
+                        }
+                    }
+
+                    if (imageCount === 0) {
+                        showResult('images-result', 'У товаров нет изображений для тестирования', 'error');
+                    }
+                } else {
+                    showResult('images-result', 'Нет товаров для тестирования изображений', 'error');
+                }
+            } catch (error) {
+                showResult('images-result', `Ошибка тестирования изображений: ${error.message}`, 'error');
+            }
+        }
+
+        // Тест производительности
+        async function performanceTest() {
+            showResult('performance-result', 'Запуск теста производительности...', 'loading');
+
+            const results = [];
+            const testCount = 5;
+
+            try {
+                for (let i = 0; i < testCount; i++) {
+                    const startTime = performance.now();
+
+                    const response = await fetch(`${TEST_CONFIG.STRAPI_BASE_URL}/api/shoes?populate=*`, {
+                        headers: {
+                            'Authorization': `Bearer ${TEST_CONFIG.API_TOKEN}`
+                        }
+                    });
+
+                    const endTime = performance.now();
+                    const duration = endTime - startTime;
+
+                    results.push({
+                        attempt: i + 1,
+                        duration: duration,
+                        status: response.status,
+                        success: response.ok
+                    });
+
+                    // Показываем прогресс
+                    showResult('performance-result', `Выполнено тестов: ${i + 1}/${testCount}
+Последнее время ответа: ${duration.toFixed(2)}ms`, 'loading');
+
+                    // Небольшая задержка между запросами
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+
+                // Анализ результатов
+                const durations = results.map(r => r.duration);
+                const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
+                const minDuration = Math.min(...durations);
+                const maxDuration = Math.max(...durations);
+                const successRate = (results.filter(r => r.success).length / testCount) * 100;
+
+                showResult('performance-result',
+                    `⚡ РЕЗУЛЬТАТЫ ТЕСТА ПРОИЗВОДИТЕЛЬНОСТИ:
+
+📊 Статистика времени отклика:
+- Среднее время: ${avgDuration.toFixed(2)}ms
+- Минимальное: ${minDuration.toFixed(2)}ms
+- Максимальное: ${maxDuration.toFixed(2)}ms
+- Успешность: ${successRate}%
+
+📈 Детали по запросам:
+${results.map(r => `${r.attempt}. ${r.duration.toFixed(2)}ms (${r.success ? '✅' : '❌'})`).join('\n')}
+
+💡 Оценка производительности:
+${avgDuration < 100 ? '🚀 Отлично!' : avgDuration < 300 ? '✅ Хорошо' : avgDuration < 1000 ? '⚠️ Приемлемо' : '❌ Медленно'}`,
+                    successRate === 100 ? 'success' : 'error');
+            } catch (error) {
+                showResult('performance-result', `Ошибка теста производительности: ${error.message}`, 'error');
+            }
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            displayConfig();
+            console.log('🧪 Страница тестирования API готова к использованию');
+        });
+    </script>
+</body>
+</html>
