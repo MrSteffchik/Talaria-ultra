@@ -5,9 +5,9 @@ const config =
     : {
         STRAPI_BASE_URL: "http://localhost:1337",
         API_TOKEN:
-          "4d517983794bd6eeaf62f96682ff0003038308f3c0f22d00f5a184d0bcb69d31c41baa4c3efdc6f3321e9d5f1bac524fd0c887c257207b570f2df9e60972d9d50229a85ab541359f4b5135fd873ce73f6dace07fe0655c8b385fdbcb33218e3fb144f63cf0e1c95cbe36e5d5c4eb8ebb2d7d4aed2987d2e74d035887d58a14a8",
+          "",
         API_SETTINGS: { timeout: 10000, retries: 3 },
-        IMAGE_SETTINGS: {
+        IMAGE_SETTINGS : {
           defaultFormat: "medium",
           fallbackText: "Изображение товара",
         },
@@ -221,8 +221,7 @@ class ShoeCard {
         <div class="shoe-image-container">
           ${imageElement}
           ${isTopSale ? '<div class="product-badge">Топ продаж</div>' : ""}
-          ${isNew ? '<div class="product-badge" style="left: auto; right: 60px;">Новинка</div>' : ""}
-          <button class="favorite-btn" onclick="event.stopPropagation(); toggleFavorite(this)">❤️</button>
+          ${isNew ? '<div class="product-badge" style="left: auto; right: 10px;">Новинка</div>' : ""}
         </div>
 
         <div class="shoe-info">

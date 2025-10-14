@@ -5,7 +5,7 @@ const CONFIG = {
 
     // API токен для авторизации
     // В продакшене этот токен должен храниться в переменных окружения
-    API_TOKEN: '4d517983794bd6eeaf62f96682ff0003038308f3c0f22d00f5a184d0bcb69d31c41baa4c3efdc6f3321e9d5f1bac524fd0c887c257207b570f2df9e60972d9d50229a85ab541359f4b5135fd873ce73f6dace07fe0655c8b385fdbcb33218e3fb144f63cf0e1c95cbe36e5d5c4eb8ebb2d7d4aed2987d2e74d035887d58a14a8',
+    API_TOKEN: '26f6c9bed0cceb2a588e3a4661374dc08180f5a7fe9ece066e2119cf9e737127bcf4dae8c2ee7653982c18ca540adfc9d4fe7eabe41ec98c19ad99eaf2074d2eea0a162b87aadee635f878009d3d4b428eea1a1b8f541bdc7389466e46b43b5b16dc4382c3afeb9c74aa0d82674ce6257ae0fffa092655aae27fbb9ac7bf740f',
 
     // Настройки для API запросов
     API_SETTINGS: {
