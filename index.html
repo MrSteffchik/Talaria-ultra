@@ -33,6 +33,8 @@
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👠</text></svg>" />
 </head>
 
+
+
 <body>
     <!-- Header -->
     <header>
@@ -402,6 +404,40 @@
             });
         });
     </script>
+
+<script>
+    let lastScrollTop = 0;
+    const header = document.querySelector("header");
+    
+    // Слушаем прокрутку
+    window.addEventListener("scroll", function () {
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+    
+      // Проверяем, что прокрутка больше, чем 50px (чтобы не мигала в самом верху)
+      if (currentScroll > 50) {
+        if (currentScroll > lastScrollTop) {
+          // Прокрутка вниз → скрыть шапку
+          header.style.transform = "translateY(-100%)";
+        } else {
+          // Прокрутка вверх → показать шапку
+          header.style.transform = "translateY(0)";
+        }
+      } else {
+        // В самом верху → всегда показываем
+        header.style.transform = "translateY(0)";
+      }
+    
+      lastScrollTop = currentScroll <= 0 ? 0 : currentScroll; // не даем уйти в минус
+    });
+    </script>
+    
+
 </body>
 
+
+
 </html>
+
+
+
+

@@ -1,4 +1,5 @@
 /* ====== CSS Variables ====== */
+
 :root {
     --primary-color: #2c1810;
     --secondary-color: #8b4513;
@@ -910,3 +911,16 @@ footer {
 .gap-2 {
     gap: 1rem;
 }
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+  }
+  body {
+    padding-top: 120px; /* чтобы контент не залезал под шапку */
+  }
+  
