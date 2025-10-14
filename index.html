@@ -404,33 +404,37 @@
             });
         });
     </script>
-
 <script>
     let lastScrollTop = 0;
+    let isHidden = false;
     const header = document.querySelector("header");
+    let scrollTimeout;
     
-    // Слушаем прокрутку
     window.addEventListener("scroll", function () {
-      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      clearTimeout(scrollTimeout); // сбрасываем таймер
+      scrollTimeout = setTimeout(() => {
+        const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
     
-      // Проверяем, что прокрутка больше, чем 50px (чтобы не мигала в самом верху)
-      if (currentScroll > 50) {
-        if (currentScroll > lastScrollTop) {
-          // Прокрутка вниз → скрыть шапку
-          header.style.transform = "translateY(-100%)";
+        if (currentScroll > lastScrollTop && currentScroll > 100) {
+          // Прокрутка вниз и не в самом верху → скрыть (только если еще не скрыта)
+          if (!isHidden) {
+            header.style.transform = "translateY(-100%)";
+            isHidden = true;
+          }
         } else {
-          // Прокрутка вверх → показать шапку
-          header.style.transform = "translateY(0)";
+          // Прокрутка вверх → показать
+          if (isHidden) {
+            header.style.transform = "translateY(0)";
+            isHidden = false;
+          }
         }
-      } else {
-        // В самом верху → всегда показываем
-        header.style.transform = "translateY(0)";
-      }
     
-      lastScrollTop = currentScroll <= 0 ? 0 : currentScroll; // не даем уйти в минус
+        lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+      }, 100); // задержка 100мс — убирает дергание
     });
     </script>
     
+
 
 </body>
 
