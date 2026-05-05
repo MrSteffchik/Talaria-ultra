@@ -6,7 +6,6 @@
     <title>Talaria — Премиальная женская обувь</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <meta name="description" content="Talaria — премиальный магазин женской обуви больших размеров в Ташкенте." />
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <link rel="icon" type="image/svg+xml"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👠</text></svg>" />
@@ -133,31 +132,29 @@
       </section>
     </main>
 
-    <!-- 🏬 Наш магазин — блок с кнопками на Tailwind -->
-<section class="bg-white py-10 text-center">
-    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Наш магазин</h2>
-    <p class="text-gray-600 mb-8">Добро пожаловать! Вы можете построить маршрут, посмотреть или оставить отзыв на Яндекс.Картах.</p>
-    
-    <div class="flex flex-wrap justify-center gap-3">
-      <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
-         class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition">
-        Наш магазин
-      </a>
-      <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
-         class="px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition">
-        Построить маршрут
-      </a>
-      <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
-         class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition">
-        Посмотреть отзывы
-      </a>
-      <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
-         class="px-5 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition">
-        Оставить отзыв
-      </a>
-    </div>
-  </section>
-  
+    <!-- Наш магазин -->
+    <section class="bg-white py-10 text-center">
+      <h2 class="text-2xl font-semibold mb-6 text-gray-800">Наш магазин</h2>
+      <p class="text-gray-600 mb-8">Добро пожаловать! Вы можете построить маршрут, посмотреть или оставить отзыв на Яндекс.Картах.</p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
+           class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition">
+          Наш магазин
+        </a>
+        <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
+           class="px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition">
+          Построить маршрут
+        </a>
+        <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
+           class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition">
+          Посмотреть отзывы
+        </a>
+        <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
+           class="px-5 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition">
+          Оставить отзыв
+        </a>
+      </div>
+    </section>
 
     <!-- Footer -->
     <footer class="bg-pink-700 text-white text-center py-6 text-sm">
@@ -165,22 +162,14 @@
       <p>Премиальная женская обувь в Ташкенте</p>
     </footer>
 
-
-
-
     <script src="config.js"></script>
     <script>
-      // ─── Загрузка товаров из Supabase ───────────────────────────────────────
-      const _sb = supabase.createClient(
-        CONFIG.SUPABASE_URL,
-        CONFIG.SUPABASE_ANON_KEY
-      );
+      const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
       function productCard(p) {
         const photo = (p.photos && p.photos.length > 0)
           ? p.photos[0]
           : 'https://via.placeholder.com/300x300?text=Нет+фото';
-        const price = p.price || '';
         const sizes = p.sizes ? `<p class="text-xs text-gray-400 mt-1">Размеры: ${p.sizes}</p>` : '';
         return `
           <div class="p-3 border rounded-xl hover:shadow-lg transition cursor-pointer group"
@@ -192,7 +181,7 @@
             </div>
             <p class="font-medium text-sm leading-tight">${p.title}</p>
             ${sizes}
-            <p class="text-pink-600 text-sm font-semibold mt-1">${price}</p>
+            <p class="text-pink-600 text-sm font-semibold mt-1">${p.price || ''}</p>
           </div>`;
       }
 
@@ -216,7 +205,6 @@
             .limit(24);
 
           if (err) throw err;
-
           loading.classList.add('hidden');
 
           if (!data || data.length === 0) {
@@ -239,13 +227,10 @@
 
       loadProducts();
 
-      // ─── Replain чат ────────────────────────────────────────────────────────
       window.replainSettings = { id: '1b40d6c4-a7a0-4f65-acde-cc2dfef2b88c' };
       (function(u){var s=document.createElement('script');s.async=true;s.src=u;
       var x=document.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);
       })('https://widget.replain.cc/dist/client.js');
     </script>
-
-
   </body>
 </html>
