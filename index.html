@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Talaria — Премиальная женская обувь</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="description" content="Talaria — премиальный магазин женской обуви больших размеров в Ташкенте." />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👠</text></svg>" />
+  </head>
+
+  <body class="font-[Inter] text-gray-800 bg-white scroll-smooth">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full bg-white shadow z-50">
+      <div class="bg-pink-100 text-center text-sm py-2">
+        🎉 Скидки до 30% на новую коллекцию!
+        <a href="#collec" class="text-pink-600 font-medium hover:underline">Смотреть →</a>
+      </div>
+      <div class="flex items-center justify-between px-4 py-3 md:px-8">
+        <div>
+          <h1 class="text-2xl font-bold text-pink-700">Talaria</h1>
+          <p class="text-xs text-gray-500">Premium Women's Shoes</p>
+        </div>
+        <nav class="hidden md:block">
+          <ul class="flex space-x-6 text-sm">
+            <li><a href="#home" class="hover:text-pink-600">Главная</a></li>
+            <li><a href="#collec" class="hover:text-pink-600">Каталог</a></li>
+            <li><a href="#brands" class="hover:text-pink-600">Бренды</a></li>
+            <li><a href="#about" class="hover:text-pink-600">О нас</a></li>
+            <li><a href="#contacts" class="hover:text-pink-600">Контакты</a></li>
+          </ul>
+        </nav>
+        <a href="tel:+998908257337"
+          class="bg-pink-600 text-white text-sm px-4 py-2 rounded-md hover:bg-pink-700 transition">📞 Консультация</a>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="pt-32 space-y-20">
+
+      <!-- Hero -->
+      <section id="home" class="text-center px-6">
+        <h2 class="text-3xl md:text-5xl font-bold mb-4 leading-tight">
+          Премиальная обувь<br />для особенных женщин
+        </h2>
+        <p class="text-gray-600 mb-8 max-w-md mx-auto">
+          Более 6 лет создаем комфорт и стиль для женщин с нестандартными размерами. Бренды из Турции и Пекина.
+        </p>
+        <div class="flex justify-center gap-6 text-center">
+          <div>
+            <p class="text-2xl font-semibold text-pink-700">6</p>
+            <p class="text-xs">лет на рынке</p>
+          </div>
+          <div>
+            <p class="text-2xl font-semibold text-pink-700">1000+</p>
+            <p class="text-xs">довольных клиенток</p>
+          </div>
+          <div>
+            <p class="text-2xl font-semibold text-pink-700">5</p>
+            <p class="text-xs">брендов</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Collection -->
+      <section id="collec" class="px-6 text-center">
+        <h2 class="text-2xl font-semibold mb-2">Наша коллекция</h2>
+        <p class="text-gray-600 mb-8">Элегантная обувь от лучших производителей Турции и Пекина.</p>
+
+        <!-- Состояние загрузки -->
+        <div id="products-loading" class="text-gray-400 py-12">
+          <div class="animate-pulse text-4xl mb-3">👠</div>
+          <p>Загружаем товары...</p>
+        </div>
+
+        <!-- Ошибка -->
+        <div id="products-error" class="hidden text-gray-400 py-12">
+          <p class="mb-4">Не удалось загрузить товары</p>
+          <button onclick="loadProducts()"
+            class="bg-pink-600 text-white px-5 py-2 rounded-lg hover:bg-pink-700 transition">
+            Попробовать снова
+          </button>
+        </div>
+
+        <!-- Сетка товаров -->
+        <div id="products-grid"
+          class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        </div>
+
+        <!-- Нет товаров -->
+        <div id="products-empty" class="hidden text-gray-400 py-12">
+          <p>Товары скоро появятся — следите за обновлениями!</p>
+        </div>
+      </section>
+
+      <!-- Brands -->
+      <section id="brands" class="bg-pink-50 py-10 text-center">
+        <h2 class="text-2xl font-semibold mb-6">Наши бренды</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 max-w-3xl mx-auto">
+          <div><p class="font-medium">👑 ZAZA</p></div>
+          <div><p class="font-medium">✨ Евромода</p></div>
+          <div><p class="font-medium">🌟 Робин</p></div>
+          <div><p class="font-medium">💎 Мисс Марис</p></div>
+          <div><p class="font-medium">🔥 VACS</p></div>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section id="about" class="px-6 text-center">
+        <h2 class="text-2xl font-semibold mb-6">Почему выбирают Talaria?</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+          <div><p>👠 Удобство</p></div>
+          <div><p>🌍 Поставки из Турции и Пекина</p></div>
+          <div><p>⭐ 6 лет опыта</p></div>
+          <div><p>💝 1000+ клиенток</p></div>
+          <div><p>✅ Контроль качества</p></div>
+          <div><p>🎨 Стильный дизайн</p></div>
+        </div>
+      </section>
+
+      <!-- Contacts -->
+      <section id="contacts" class="bg-gray-50 py-10 text-center">
+        <h2 class="text-2xl font-semibold mb-6">Контакты</h2>
+        <div class="space-y-4 text-gray-700">
+          <p>📍 Ташкент, ул. Мирзо Улугбека, 99</p>
+          <p>📞 <a href="tel:+998908257337" class="text-pink-600 hover:underline">90-825-73-37</a></p>
+          <p>📱 <a href="https://www.instagram.com/talaria_by_zemfira" class="text-pink-600 hover:underline">@talaria_by_zemfira</a></p>
+          <p>💬 <a href="https://t.me/talariaUz" class="text-pink-600 hover:underline">@talariaUz</a></p>
+        </div>
+      </section>
+    </main>
+
+    <!-- 🏬 Наш магазин — блок с кнопками на Tailwind -->
+<section class="bg-white py-10 text-center">
+    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Наш магазин</h2>
+    <p class="text-gray-600 mb-8">Добро пожаловать! Вы можете построить маршрут, посмотреть или оставить отзыв на Яндекс.Картах.</p>
+    
+    <div class="flex flex-wrap justify-center gap-3">
+      <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
+         class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition">
+        Наш магазин
+      </a>
+      <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
+         class="px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition">
+        Построить маршрут
+      </a>
+      <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
+         class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition">
+        Посмотреть отзывы
+      </a>
+      <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
+         class="px-5 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition">
+        Оставить отзыв
+      </a>
+    </div>
+  </section>
+  
+
+    <!-- Footer -->
+    <footer class="bg-pink-700 text-white text-center py-6 text-sm">
+      <p>&copy; 2025 Talaria. Все права защищены.</p>
+      <p>Премиальная женская обувь в Ташкенте</p>
+    </footer>
+
+
+
+
+    <script src="config.js"></script>
+    <script>
+      // ─── Загрузка товаров из Supabase ───────────────────────────────────────
+      const _sb = supabase.createClient(
+        CONFIG.SUPABASE_URL,
+        CONFIG.SUPABASE_ANON_KEY
+      );
+
+      function productCard(p) {
+        const photo = (p.photos && p.photos.length > 0)
+          ? p.photos[0]
+          : 'https://via.placeholder.com/300x300?text=Нет+фото';
+        const price = p.price || '';
+        const sizes = p.sizes ? `<p class="text-xs text-gray-400 mt-1">Размеры: ${p.sizes}</p>` : '';
+        return `
+          <div class="p-3 border rounded-xl hover:shadow-lg transition cursor-pointer group"
+               onclick="openProduct(${p.id})">
+            <div class="overflow-hidden rounded-lg mb-3 aspect-square bg-gray-100">
+              <img src="${photo}" alt="${p.title}"
+                class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'">
+            </div>
+            <p class="font-medium text-sm leading-tight">${p.title}</p>
+            ${sizes}
+            <p class="text-pink-600 text-sm font-semibold mt-1">${price}</p>
+          </div>`;
+      }
+
+      async function loadProducts() {
+        const grid    = document.getElementById('products-grid');
+        const loading = document.getElementById('products-loading');
+        const error   = document.getElementById('products-error');
+        const empty   = document.getElementById('products-empty');
+
+        loading.classList.remove('hidden');
+        grid.classList.add('hidden');
+        error.classList.add('hidden');
+        empty.classList.add('hidden');
+
+        try {
+          const { data, error: err } = await _sb
+            .from('products')
+            .select('id, title, sizes, price, photos')
+            .eq('is_available', true)
+            .order('created_at', { ascending: false })
+            .limit(24);
+
+          if (err) throw err;
+
+          loading.classList.add('hidden');
+
+          if (!data || data.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+          }
+
+          grid.innerHTML = data.map(productCard).join('');
+          grid.classList.remove('hidden');
+        } catch (e) {
+          console.error(e);
+          loading.classList.add('hidden');
+          error.classList.remove('hidden');
+        }
+      }
+
+      function openProduct(id) {
+        window.location.href = `product.html?id=${id}`;
+      }
+
+      loadProducts();
+
+      // ─── Replain чат ────────────────────────────────────────────────────────
+      window.replainSettings = { id: '1b40d6c4-a7a0-4f65-acde-cc2dfef2b88c' };
+      (function(u){var s=document.createElement('script');s.async=true;s.src=u;
+      var x=document.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);
+      })('https://widget.replain.cc/dist/client.js');
+    </script>
+
+
+  </body>
+</html>
