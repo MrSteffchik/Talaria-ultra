@@ -1,120 +1,165 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Talaria — Детали товара</title>
+    <title>Talaria — Товар</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="./api.js" defer></script>
-    <script src="./product.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👠</text></svg>" />
   </head>
 
   <body class="bg-gray-50 text-gray-800">
+
     <!-- Header -->
     <header class="sticky top-0 z-50 bg-white shadow-sm">
-      <div class="max-w-6xl mx-auto flex items-center justify-between p-4">
-        <a href="index.html" class="text-xl font-semibold text-pink-600">
-          TALARIA
-        </a>
-        <div class="flex items-center space-x-4">
-          <a href="index.html" class="hover:text-pink-600 text-sm">Главная</a>
-          <a href="catalog.html" class="hover:text-pink-600 text-sm">Каталог</a>
-          <a href="cart.html" class="hover:text-pink-600 text-sm">Корзина</a>
-        </div>
+      <div class="max-w-2xl mx-auto flex items-center justify-between px-4 py-3">
+        <a href="index.html" class="text-xl font-bold text-pink-700">Talaria</a>
+        <a href="index.html" class="text-sm text-gray-500 hover:text-pink-600">← Назад</a>
       </div>
     </header>
 
-    <!-- Product Section -->
-    <main class="max-w-6xl mx-auto p-4">
-      <div
-        id="product-container"
-        class="grid md:grid-cols-2 gap-6 bg-white rounded-2xl shadow-sm p-4"
-      >
-        <!-- Product Image -->
-        <div class="flex justify-center items-center">
-          <img
-            id="product-image"
-            src=""
-            alt="Обувь"
-            class="rounded-xl w-full max-w-sm object-cover"
-          />
+    <!-- Загрузка -->
+    <div id="loading" class="flex flex-col items-center justify-center py-32 text-gray-400">
+      <div class="text-5xl mb-4 animate-bounce">👠</div>
+      <p>Загружаем товар...</p>
+    </div>
+
+    <!-- Ошибка -->
+    <div id="error" class="hidden text-center py-32 text-gray-400">
+      <p class="mb-4">Товар не найден</p>
+      <a href="index.html" class="text-pink-600 hover:underline">← Вернуться на главную</a>
+    </div>
+
+    <!-- Карточка товара -->
+    <main id="product" class="hidden max-w-2xl mx-auto px-4 py-6">
+
+      <!-- Фотогалерея -->
+      <div id="gallery" class="mb-6">
+        <!-- Главное фото -->
+        <div class="rounded-2xl overflow-hidden bg-gray-100 aspect-square mb-2">
+          <img id="main-photo" src="" alt="Фото товара"
+            class="w-full h-full object-cover">
         </div>
+        <!-- Миниатюры (если несколько фото) -->
+        <div id="thumbs" class="flex gap-2 overflow-x-auto pb-1"></div>
+      </div>
 
-        <!-- Product Info -->
-        <div class="flex flex-col justify-center space-y-4">
-          <h1 id="product-name" class="text-2xl font-bold"></h1>
-          <p id="product-brand" class="text-gray-500 text-sm"></p>
+      <!-- Цена -->
+      <p id="price" class="text-2xl font-bold text-pink-600 mb-3"></p>
 
-          <div class="flex items-center space-x-2">
-            <span
-              id="product-price"
-              class="text-2xl font-semibold text-pink-600"
-            ></span>
-            <span
-              id="product-old-price"
-              class="line-through text-gray-400 text-sm"
-            ></span>
-          </div>
+      <!-- Название -->
+      <h1 id="title" class="text-xl font-semibold mb-2"></h1>
 
-          <p id="product-desc" class="text-sm text-gray-600"></p>
+      <!-- Размеры -->
+      <div id="sizes-block" class="hidden mb-3">
+        <p class="text-sm text-gray-500">Размеры: <span id="sizes" class="text-gray-700 font-medium"></span></p>
+      </div>
 
-          <button
-            id="add-to-cart"
-            class="bg-pink-600 text-white py-2 rounded-xl hover:bg-pink-700 transition"
-          >
-            Добавить в корзину
-          </button>
-        </div>
+      <!-- Описание -->
+      <div id="desc-block" class="hidden mb-6">
+        <p id="desc" class="text-gray-600 text-sm whitespace-pre-line leading-relaxed"></p>
+      </div>
+
+      <!-- Кнопки заказа -->
+      <div class="space-y-3">
+        <a id="tg-order" href="#" target="_blank"
+          class="flex items-center justify-center gap-2 w-full bg-blue-500 text-white py-3 rounded-2xl text-base font-medium hover:bg-blue-600 transition">
+          ✈️ Заказать в Telegram
+        </a>
+        <a href="tel:+998908257337"
+          class="flex items-center justify-center gap-2 w-full border border-pink-600 text-pink-600 py-3 rounded-2xl text-base font-medium hover:bg-pink-50 transition">
+          📞 Позвонить: 90-825-73-37
+        </a>
       </div>
     </main>
 
     <!-- Footer -->
-    <footer class="mt-10 bg-white border-t">
-      <div
-        class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center p-4 text-sm text-gray-500"
-      >
-        <p>© 2025 Talaria. Все права защищены.</p>
-        <div class="flex items-center space-x-4 mt-2 md:mt-0">
-          <a href="#" class="hover:text-pink-600">Instagram</a>
-          <a href="#" class="hover:text-pink-600">Telegram</a>
-          <a href="#" class="hover:text-pink-600">Связаться</a>
-        </div>
-      </div>
+    <footer class="mt-10 bg-white border-t text-center py-5 text-sm text-gray-400">
+      <p>© 2025 Talaria — Премиальная женская обувь</p>
     </footer>
 
+    <script src="config.js"></script>
     <script>
-      // Пример простейшей логики без лишних зависимостей
+      const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
       async function loadProduct() {
-        const params = new URLSearchParams(window.location.search);
-        const id = params.get("id");
-        if (!id) return;
+        const id = new URLSearchParams(window.location.search).get('id');
+        if (!id) { showError(); return; }
 
         try {
-          const res = await fetch(`${API_URL}/products/${id}?populate=*`);
-          const data = await res.json();
-          const p = data.data.attributes;
+          const { data, error } = await _sb
+            .from('products')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-          document.getElementById("product-image").src =
-            p.image?.data?.attributes?.url || "./placeholder.jpg";
-          document.getElementById("product-name").textContent = p.title;
-          document.getElementById("product-brand").textContent = p.brand;
-          document.getElementById("product-price").textContent =
-            p.discounted_price
-              ? `${p.discounted_price} сум`
-              : `${p.price} сум`;
-          document.getElementById("product-old-price").textContent =
-            p.discounted_price ? `${p.price} сум` : "";
-          document.getElementById("product-desc").textContent =
-            p.description || "Описание отсутствует";
+          if (error || !data) { showError(); return; }
 
-          document
-            .getElementById("add-to-cart")
-            .addEventListener("click", () => {
-              alert("Добавлено в корзину!");
-            });
-        } catch (err) {
-          console.error(err);
+          renderProduct(data);
+        } catch (e) {
+          console.error(e);
+          showError();
         }
+      }
+
+      function renderProduct(p) {
+        const photos = p.photos && p.photos.length > 0
+          ? p.photos
+          : ['https://via.placeholder.com/600x600?text=Нет+фото'];
+
+        // Главное фото
+        document.getElementById('main-photo').src = photos[0];
+
+        // Миниатюры (только если больше одного фото)
+        const thumbs = document.getElementById('thumbs');
+        if (photos.length > 1) {
+          thumbs.innerHTML = photos.map((url, i) => `
+            <img src="${url}" alt=""
+              class="w-16 h-16 rounded-lg object-cover cursor-pointer border-2 ${i === 0 ? 'border-pink-500' : 'border-transparent'} flex-shrink-0"
+              onclick="switchPhoto('${url}', this)">
+          `).join('');
+        }
+
+        // Данные
+        document.getElementById('price').textContent = p.price || '';
+        document.getElementById('title').textContent = p.title || '';
+
+        if (p.sizes) {
+          document.getElementById('sizes').textContent = p.sizes;
+          document.getElementById('sizes-block').classList.remove('hidden');
+        }
+
+        if (p.description) {
+          document.getElementById('desc').textContent = p.description;
+          document.getElementById('desc-block').classList.remove('hidden');
+        }
+
+        // Ссылка на заказ в Telegram
+        const text = encodeURIComponent(`Хочу заказать: ${p.title || 'товар'} | ${p.price || ''}`);
+        document.getElementById('tg-order').href = `https://t.me/nalabutenahZK?text=${text}`;
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('product').classList.remove('hidden');
+
+        // Заголовок страницы
+        document.title = `Talaria — ${p.title || 'Товар'}`;
+      }
+
+      function switchPhoto(url, el) {
+        document.getElementById('main-photo').src = url;
+        document.querySelectorAll('#thumbs img').forEach(img => {
+          img.classList.remove('border-pink-500');
+          img.classList.add('border-transparent');
+        });
+        el.classList.add('border-pink-500');
+        el.classList.remove('border-transparent');
+      }
+
+      function showError() {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('error').classList.remove('hidden');
       }
 
       loadProduct();

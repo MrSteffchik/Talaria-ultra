@@ -170,18 +170,14 @@
         const photo = (p.photos && p.photos.length > 0)
           ? p.photos[0]
           : 'https://via.placeholder.com/300x300?text=Нет+фото';
-        const sizes = p.sizes ? `<p class="text-xs text-gray-400 mt-1">Размеры: ${p.sizes}</p>` : '';
         return `
-          <div class="p-3 border rounded-xl hover:shadow-lg transition cursor-pointer group"
-               onclick="openProduct(${p.id})">
-            <div class="overflow-hidden rounded-lg mb-3 aspect-square bg-gray-100">
-              <img src="${photo}" alt="${p.title}"
+          <div class="cursor-pointer group" onclick="openProduct(${p.id})">
+            <div class="overflow-hidden rounded-2xl aspect-square bg-gray-100">
+              <img src="${photo}" alt="Обувь"
                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                 onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'">
             </div>
-            <p class="font-medium text-sm leading-tight">${p.title}</p>
-            ${sizes}
-            <p class="text-pink-600 text-sm font-semibold mt-1">${p.price || ''}</p>
+            <p class="text-pink-600 text-sm font-semibold mt-2 text-center">${p.price || ''}</p>
           </div>`;
       }
 
