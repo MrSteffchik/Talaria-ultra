@@ -1,8 +1,7 @@
-import asyncio
 import os
 import re
 import logging
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -17,7 +16,7 @@ log = logging.getLogger(__name__)
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 SUPABASE_URL   = os.environ["SUPABASE_URL"]
-SUPABASE_KEY   = os.environ["SUPABASE_SERVICE_KEY"]   # сервисный ключ — только для бота
+SUPABASE_KEY   = os.environ["SUPABASE_SERVICE_KEY"]
 BUCKET         = "product-photos"
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -25,44 +24,85 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ─── Парсер подписи ───────────────────────────────────────────────────────────
 
-# Строки, которые точно не про товар
-_SKIP_PATTERNS = re.compile(
+_SKIP_RE   = re.compile(
     r"(t\.me/|instagram|инстаграм|@nala|ссылка на|наш магазин|вещи|одежда"
     r"|для заказа|908257337|\+998)",
     re.IGNORECASE,
 )
-_PRICE_RE   = re.compile(r"цена|сум", re.IGNORECASE)
-_SIZES_RE   = re.compile(r"➡|➡️|\b(3[5-9]|4[0-9]|5[0-2])\b")
-_PHONE_RE   = re.compile(r"^[\d\s\-\+\(\)]{6,}$")
-_ORDER_RE   = re.compile(r"(заказ|@\w+)", re.IGNORECASE)
-_REVIEW_RE  = re.compile(r"#отзыв|отзывклиент", re.IGNORECASE)
+_PRICE_RE  = re.compile(r"сум", re.IGNORECASE)
+# Размер: строка содержит только числа 35-52 (через запятую, пробел или перенос)
+_SIZE_ONLY = re.compile(r"^[\d\s,\-\.]+$")
+_SIZE_NUM  = re.compile(r"\b(3[5-9]|4[0-9]|5[0-2])\b")
+_ARROW_RE  = re.compile(r"[➡️➡]")
+_PHONE_RE  = re.compile(r"^[\d\s\-\+\(\)]{6,}$")
+_ORDER_RE  = re.compile(r"(заказ|@\w+)", re.IGNORECASE)
+_REVIEW_RE = re.compile(r"#отзыв|отзывклиент", re.IGNORECASE)
 
 
-def parse_caption(text: str) -> dict | None:
+def extract_strikethrough(text: str, entities) -> set[tuple[int,int]]:
+    """Возвращает множество (start, end) зачёркнутых фрагментов."""
+    ranges = set()
+    if not entities:
+        return ranges
+    for e in entities:
+        if e.type == "strikethrough":
+            ranges.add((e.offset, e.offset + e.length))
+    return ranges
+
+
+def is_strikethrough(line: str, text: str, strike_ranges: set) -> bool:
+    """Проверяет, является ли строка полностью зачёркнутой."""
+    if not strike_ranges:
+        return False
+    try:
+        start = text.index(line)
+        end = start + len(line)
+        for (s, e) in strike_ranges:
+            if s <= start and end <= e:
+                return True
+    except ValueError:
+        pass
+    return False
+
+
+def parse_caption(text: str, entities=None) -> dict | None:
     if not text:
         return None
     if _REVIEW_RE.search(text):
         log.info("Пропускаем: пост с отзывом")
         return None
 
-    title = sizes = price = None
+    strike_ranges = extract_strikethrough(text, entities)
+
+    title = None
+    sizes_parts: list[str] = []
+    price = None
+    old_price = None
     desc_lines: list[str] = []
 
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if not line:
             continue
-        if _SKIP_PATTERNS.search(line):
+        if _SKIP_RE.search(line):
             continue
         if _PHONE_RE.match(line) or _ORDER_RE.search(line):
             continue
 
+        # Зачёркнутая строка с ценой = старая цена
+        if _PRICE_RE.search(line) and is_strikethrough(line, text, strike_ranges):
+            old_price = line
+            continue
+
+        # Обычная строка с ценой = текущая цена
         if _PRICE_RE.search(line):
             price = line
             continue
 
-        if _SIZES_RE.search(line):
-            sizes = re.sub(r"[➡️➡]", "", line).strip()
+        # Строка только из цифр (размеры) или содержит ➡️
+        if _ARROW_RE.search(line) or (_SIZE_NUM.search(line) and _SIZE_ONLY.match(_ARROW_RE.sub("", line).replace(",", " ").strip())):
+            cleaned = _ARROW_RE.sub("", line).strip()
+            sizes_parts.append(cleaned)
             continue
 
         if title is None:
@@ -73,10 +113,17 @@ def parse_caption(text: str) -> dict | None:
     if not title and not price:
         return None
 
+    sizes = ", ".join(sizes_parts) if sizes_parts else None
+
+    # Показываем цену красиво: если есть скидка
+    display_price = price or ""
+    if old_price and price:
+        display_price = f"{price} (было: {old_price})"
+
     return {
         "title":       title or "Товар",
         "sizes":       sizes,
-        "price":       price,
+        "price":       display_price,
         "description": "\n".join(desc_lines) or None,
     }
 
@@ -99,22 +146,23 @@ async def upload_photo(data: bytes, filename: str) -> str | None:
 # ─── Обработчик сообщений ─────────────────────────────────────────────────────
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message or update.channel_post
+    msg: Message = update.message or update.channel_post
     if not msg or not msg.photo:
         return
 
-    caption         = msg.caption or ""
-    media_group_id  = msg.media_group_id
-    message_id      = msg.message_id
+    caption        = msg.caption or ""
+    entities       = msg.caption_entities or []
+    media_group_id = msg.media_group_id
+    message_id     = msg.message_id
 
-    # Загружаем фото с наилучшим качеством
+    # Загружаем лучшее фото
     best = msg.photo[-1]
     tg_file = await context.bot.get_file(best.file_id)
     photo_bytes = bytes(await tg_file.download_as_bytearray())
     filename = f"{message_id}_{best.file_unique_id}.jpg"
     photo_url = await upload_photo(photo_bytes, filename)
 
-    # Если это часть группы и товар уже создан — просто добавляем фото
+    # Часть медиагруппы — добавляем фото к существующему товару
     if media_group_id:
         existing = (
             supabase.table("products")
@@ -130,17 +178,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 supabase.table("products").update({"photos": photos}).eq("id", product["id"]).execute()
                 log.info("Добавлено фото к группе %s", media_group_id)
             return
-        # Первое сообщение группы — проверим подпись ниже
 
-    # Без подписи и без media_group сохранять нечего
     if not caption:
         return
 
-    parsed = parse_caption(caption)
+    parsed = parse_caption(caption, entities)
     if not parsed:
         return
 
-    # Дедупликация по message_id
+    # Дедупликация
     dup = (
         supabase.table("products")
         .select("id")
@@ -161,14 +207,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ─── Запуск ───────────────────────────────────────────────────────────────────
 
 def main():
-    app = (
-        Application.builder()
-        .token(TELEGRAM_TOKEN)
-        .build()
-    )
-    app.add_handler(
-        MessageHandler(filters.PHOTO, handle_message)
-    )
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    app.add_handler(MessageHandler(filters.PHOTO, handle_message))
     log.info("Бот запущен — слушаем группу...")
     app.run_polling(allowed_updates=["message", "channel_post"])
 
