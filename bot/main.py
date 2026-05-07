@@ -29,6 +29,11 @@ _SKIP_RE   = re.compile(
     r"|для заказа|908257337|\+998)",
     re.IGNORECASE,
 )
+# Целые посты которые надо пропускать полностью
+_SKIP_POST_RE = re.compile(
+    r"(сертификат|акция|розыгрыш|конкурс|поздравля|открыт|закрыт|выходн)",
+    re.IGNORECASE,
+)
 _PRICE_RE  = re.compile(r"сум", re.IGNORECASE)
 # Размер: строка содержит только числа 35-52 (через запятую, пробел или перенос)
 _SIZE_ONLY = re.compile(r"^[\d\s,\-\.]+$")
@@ -71,6 +76,9 @@ def parse_caption(text: str, entities=None) -> dict | None:
     if _REVIEW_RE.search(text):
         log.info("Пропускаем: пост с отзывом")
         return None
+    if _SKIP_POST_RE.search(text):
+        log.info("Пропускаем: не товарный пост")
+        return None
 
     strike_ranges = extract_strikethrough(text, entities)
 
@@ -110,7 +118,8 @@ def parse_caption(text: str, entities=None) -> dict | None:
         else:
             desc_lines.append(line)
 
-    if not title and not price:
+    # Без цены — не товар
+    if not price:
         return None
 
     sizes = ", ".join(sizes_parts) if sizes_parts else None
