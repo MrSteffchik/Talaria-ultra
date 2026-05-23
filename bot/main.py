@@ -213,10 +213,96 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     log.info("Сохранён товар: %s | %s", parsed["title"], parsed["price"])
 
 
+# ─── Мониторинг заказов ────────────────────────────────────────────────────────
+
+async def order_checker_loop(app: Application):
+    import asyncio
+    log.info("Фоновый цикл проверки заказов запущен...")
+    
+    admin_chat_id = os.environ.get("ADMIN_CHAT_ID")
+    if not admin_chat_id:
+        log.warning("⚠️ ВНИМАНИЕ: Переменная окружения ADMIN_CHAT_ID не установлена! Уведомления о заказах не будут отправляться.")
+        return
+        
+    while True:
+        try:
+            # Выбираем заказы со статусом 'pending' (новые)
+            res = (
+                supabase.table("orders")
+                .select("*")
+                .eq("status", "pending")
+                .execute()
+            )
+            
+            if res.data:
+                for order in res.data:
+                    order_id = order["id"]
+                    name = order["customer_name"]
+                    phone = order["phone"]
+                    delivery = order["delivery_type"]
+                    address = order["address"] or "Не указан"
+                    payment = order["payment_method"]
+                    total = order["total_price"]
+                    items = order["items"] or []
+                    
+                    # Форматируем состав заказа
+                    items_list = []
+                    for idx, item in enumerate(items, 1):
+                        title = item.get("title", "Товар")
+                        size = item.get("size", "Без размера")
+                        qty = item.get("quantity", 1)
+                        price = item.get("price", "")
+                        items_list.append(f"{idx}. {title} (Размер: {size}) — {qty} шт. | {price}")
+                    
+                    items_str = "\n".join(items_list)
+                    
+                    # Форматируем доставку и оплату
+                    deliv_str = "🚚 Доставка курьером" if delivery == "delivery" else "🏪 Самовывоз (Мирзо Улугбека 99)"
+                    
+                    pay_str = "💵 Наличными / При получении"
+                    if payment == "click":
+                        pay_str = "📲 CLICK"
+                    elif payment == "payme":
+                        pay_str = "📲 PAYME"
+                        
+                    msg_text = (
+                        f"🔔 **НОВЫЙ ЗАКАЗ #{order_id}!**\n\n"
+                        f"👤 **Покупатель:** {name}\n"
+                        f"📞 **Телефон:** `{phone}`\n"
+                        f"📦 **Тип получения:** {deliv_str}\n"
+                        f"📍 **Адрес:** {address}\n"
+                        f"💳 **Оплата:** {pay_str}\n\n"
+                        f"🛍️ **Состав заказа:**\n{items_str}\n\n"
+                        f"💰 **Итого к оплате:** {total:,} сум\n"
+                    ).replace(",", " ")
+                    
+                    # Отправляем уведомление администратору
+                    await app.bot.send_message(
+                        chat_id=admin_chat_id,
+                        text=msg_text,
+                        parse_mode="Markdown"
+                    )
+                    log.info("Отправлено уведомление о заказе #%s администратору", order_id)
+                    
+                    # Обновляем статус заказа, чтобы не слать повторно
+                    supabase.table("orders").update({"status": "notified"}).eq("id", order_id).execute()
+                    
+            await asyncio.sleep(20) # Проверяем каждые 20 секунд
+        except Exception as exc:
+            log.error("Ошибка в фоновом цикле заказов: %s", exc)
+            await asyncio.sleep(30)
+
+
+async def post_init(application: Application) -> None:
+    import asyncio
+    # Запускаем фоновую задачу проверки заказов в цикле событий asyncio
+    asyncio.create_task(order_checker_loop(application))
+
+
 # ─── Запуск ───────────────────────────────────────────────────────────────────
 
 def main():
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    app = Application.builder().token(TELEGRAM_TOKEN).post_init(post_init).build()
     app.add_handler(MessageHandler(filters.PHOTO, handle_message))
     log.info("Бот запущен — слушаем группу...")
     app.run_polling(allowed_updates=["message", "channel_post"])

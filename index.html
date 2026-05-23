@@ -1,186 +1,447 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Talaria — Премиальная женская обувь</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <meta name="description" content="Talaria — премиальный магазин женской обуви больших размеров в Ташкенте." />
+    
+    <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <link rel="icon" type="image/svg+xml"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👠</text></svg>" />
+    
+    <!-- Google Fonts: Playfair Display for Serifs, Outfit for clean UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    
+    <meta name="description" content="Talaria — премиальный бутик женской обуви больших размеров в Ташкенте. Поставки из Турции и Пекина." />
+    
+    <style>
+      body {
+        font-family: 'Outfit', sans-serif;
+        background-color: #FAF6F0;
+        color: #1A1A1A;
+      }
+      .font-serif-luxury {
+        font-family: 'Playfair Display', serif;
+      }
+      /* Custom fine scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #FAF6F0;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #E5DCD3;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #D4AF37;
+      }
+    </style>
   </head>
 
-  <body class="font-[Inter] text-gray-800 bg-white scroll-smooth">
-    <!-- Header -->
-    <header class="fixed top-0 left-0 w-full bg-white shadow z-50">
-      <div class="bg-pink-100 text-center text-sm py-2">
-        🎉 Скидки до 30% на новую коллекцию!
-        <a href="#collec" class="text-pink-600 font-medium hover:underline">Смотреть →</a>
-      </div>
-      <div class="flex items-center justify-between px-4 py-3 md:px-8">
-        <div>
-          <h1 class="text-2xl font-bold text-pink-700">Talaria</h1>
-          <p class="text-xs text-gray-500">Premium Women's Shoes</p>
-        </div>
-        <nav class="hidden md:block">
-          <ul class="flex space-x-6 text-sm">
-            <li><a href="#home" class="hover:text-pink-600">Главная</a></li>
-            <li><a href="#collec" class="hover:text-pink-600">Каталог</a></li>
-            <li><a href="#brands" class="hover:text-pink-600">Бренды</a></li>
-            <li><a href="#about" class="hover:text-pink-600">О нас</a></li>
-            <li><a href="#contacts" class="hover:text-pink-600">Контакты</a></li>
+  <body class="min-h-screen flex flex-col justify-between overflow-x-hidden antialiased">
+
+    <!-- Top Announcement Bar -->
+    <div class="bg-[#1A1A1A] text-[#FAF6F0] text-center text-xs tracking-[0.2em] py-2.5 uppercase font-medium">
+      БЕСПЛАТНАЯ ДОСТАВКА ПО ТАШКЕНТУ • БЫСТРАЯ ОТПРАВКА ПО УЗБЕКИСТАНУ
+    </div>
+
+    <!-- Header / Navigation -->
+    <header class="sticky top-0 z-50 bg-[#FAF6F0]/90 backdrop-blur-md border-b border-[#E5DCD3]">
+      <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 md:px-12">
+        <!-- Logo -->
+        <a href="index.html" class="flex flex-col">
+          <span class="text-3xl font-serif-luxury tracking-wider text-[#1A1A1A]">TALARIA</span>
+          <span class="text-[9px] tracking-[0.3em] text-[#8C847A] uppercase font-semibold">Premium Women's Shoes</span>
+        </a>
+
+        <!-- Desktop Menu -->
+        <nav class="hidden lg:block">
+          <ul class="flex space-x-8 text-xs font-semibold tracking-[0.25em] uppercase text-[#5C544A]">
+            <li><a href="#home" class="hover:text-[#D4AF37] transition duration-200">Главная</a></li>
+            <li><a href="#catalog" class="hover:text-[#D4AF37] transition duration-200">Каталог</a></li>
+            <li><a href="#about" class="hover:text-[#D4AF37] transition duration-200">О нас</a></li>
+            <li><a href="#contacts" class="hover:text-[#D4AF37] transition duration-200">Контакты</a></li>
           </ul>
         </nav>
-        <a href="tel:+998908257337"
-          class="bg-pink-600 text-white text-sm px-4 py-2 rounded-md hover:bg-pink-700 transition">📞 Консультация</a>
+
+        <!-- Right Header Items -->
+        <div class="flex items-center space-x-6">
+          <a href="tel:+998908257337" class="hidden md:flex items-center text-xs tracking-wider text-[#5C544A] hover:text-[#D4AF37] font-semibold transition">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+            90 825-73-37
+          </a>
+          
+          <!-- Cart Trigger -->
+          <button onclick="toggleCart(true)" class="relative p-2 text-[#1A1A1A] hover:text-[#D4AF37] transition duration-200" aria-label="Корзина">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path>
+            </svg>
+            <span id="cart-badge" class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#D4AF37] text-[9px] font-bold text-white transition-all scale-0">0</span>
+          </</button>
+        </div>
       </div>
     </header>
 
-    <!-- Main -->
-    <main class="pt-32 space-y-20">
+    <!-- Main Content -->
+    <main class="flex-grow">
 
-      <!-- Hero -->
-      <section id="home" class="text-center px-6">
-        <h2 class="text-3xl md:text-5xl font-bold mb-4 leading-tight">
-          Премиальная обувь<br />для особенных женщин
-        </h2>
-        <p class="text-gray-600 mb-8 max-w-md mx-auto">
-          Более 6 лет создаем комфорт и стиль для женщин с нестандартными размерами. Бренды из Турции и Пекина.
-        </p>
-        <div class="flex justify-center gap-6 text-center">
-          <div>
-            <p class="text-2xl font-semibold text-pink-700">6</p>
-            <p class="text-xs">лет на рынке</p>
-          </div>
-          <div>
-            <p class="text-2xl font-semibold text-pink-700">1000+</p>
-            <p class="text-xs">довольных клиенток</p>
-          </div>
-          <div>
-            <p class="text-2xl font-semibold text-pink-700">5</p>
-            <p class="text-xs">брендов</p>
-          </div>
+      <!-- Hero Section -->
+      <section id="home" class="relative py-24 md:py-36 px-6 overflow-hidden bg-gradient-to-b from-[#EFE9DF] to-[#FAF6F0]">
+        <div class="max-w-5xl mx-auto text-center relative z-10">
+          <h2 class="text-4xl md:text-7xl font-serif-luxury font-light text-[#1A1A1A] mb-6 leading-tight tracking-wider">
+            Элегантность <br class="md:hidden" />в каждом шаге
+          </h2>
+          <p class="text-sm md:text-base text-[#5C544A] tracking-wider mb-10 max-w-lg mx-auto font-light leading-relaxed">
+            Более 6 лет мы представляем эксклюзивные коллекции женской обуви нестандартных размеров из лучших фабрик Турции и Пекина.
+          </p>
+          <a href="#catalog" class="inline-block bg-[#1A1A1A] text-[#FAF6F0] hover:bg-[#D4AF37] hover:text-white px-8 py-3.5 text-xs font-semibold tracking-[0.2em] uppercase rounded-none transition duration-300">
+            Исследовать Коллекцию
+          </a>
+        </div>
+        
+        <!-- Luxury ambient design lines -->
+        <div class="absolute inset-0 flex items-center justify-between opacity-10 pointer-events-none">
+          <div class="w-72 h-72 border border-[#D4AF37] rounded-full -ml-36"></div>
+          <div class="w-96 h-96 border border-[#D4AF37] rounded-full -mr-48"></div>
         </div>
       </section>
 
-      <!-- Collection -->
-      <section id="collec" class="px-6 text-center">
-        <h2 class="text-2xl font-semibold mb-2">Наша коллекция</h2>
-        <p class="text-gray-600 mb-8">Элегантная обувь от лучших производителей Турции и Пекина.</p>
-
-        <!-- Состояние загрузки -->
-        <div id="products-loading" class="text-gray-400 py-12">
-          <div class="animate-pulse text-4xl mb-3">👠</div>
-          <p>Загружаем товары...</p>
+      <!-- Catalog Section -->
+      <section id="catalog" class="max-w-7xl mx-auto px-6 py-20 md:px-12">
+        <div class="text-center mb-12">
+          <h2 class="text-2xl md:text-4xl font-serif-luxury tracking-wide mb-3">Наш Каталог</h2>
+          <p class="text-xs tracking-widest text-[#8C847A] uppercase">Изысканные модели большого размера для любого повода</p>
         </div>
 
-        <!-- Ошибка -->
-        <div id="products-error" class="hidden text-gray-400 py-12">
-          <p class="mb-4">Не удалось загрузить товары</p>
-          <button onclick="loadProducts()"
-            class="bg-pink-600 text-white px-5 py-2 rounded-lg hover:bg-pink-700 transition">
+        <!-- Filter Controls -->
+        <div class="mb-10 space-y-6">
+          <!-- Category Tabs -->
+          <div class="flex flex-wrap justify-center gap-2 border-b border-[#E5DCD3] pb-4">
+            <button onclick="filterCategory('all')" id="cat-all" class="cat-btn px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-[#1A1A1A] text-[#1A1A1A] transition">Все модели</button>
+            <button onclick="filterCategory('shoes')" id="cat-shoes" class="cat-btn px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-transparent text-[#8C847A] hover:text-[#1A1A1A] transition">Туфли</button>
+            <button onclick="filterCategory('sneakers')" id="cat-sneakers" class="cat-btn px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-transparent text-[#8C847A] hover:text-[#1A1A1A] transition">Кроссовки</button>
+            <button onclick="filterCategory('sandals')" id="cat-sandals" class="cat-btn px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-transparent text-[#8C847A] hover:text-[#1A1A1A] transition">Босоножки</button>
+            <button onclick="filterCategory('sabots')" id="cat-sabots" class="cat-btn px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-transparent text-[#8C847A] hover:text-[#1A1A1A] transition">Сабо и Слипоны</button>
+          </div>
+
+          <!-- Live Search & Size Filter Row -->
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Search bar -->
+            <div class="relative w-full md:w-80">
+              <input type="text" id="search-input" oninput="handleSearch()" placeholder="Поиск по названию или деталям..." 
+                class="w-full bg-[#FAF6F0] text-xs px-4 py-3 pl-10 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none transition" />
+              <svg class="absolute left-3.5 top-3.5 w-4 h-4 text-[#8C847A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+
+            <!-- Size Badges filter -->
+            <div class="flex items-center space-x-3 w-full md:w-auto overflow-x-auto py-1">
+              <span class="text-xs text-[#8C847A] uppercase tracking-wider whitespace-nowrap">Размер:</span>
+              <div class="flex gap-1.5" id="size-filters-container">
+                <!-- Sizes dynamically filled or static standard sizes -->
+                <button onclick="toggleSizeFilter(36)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none">36</button>
+                <button onclick="toggleSizeFilter(37)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none">37</button>
+                <button onclick="toggleSizeFilter(38)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none">38</button>
+                <button onclick="toggleSizeFilter(39)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none">39</button>
+                <button onclick="toggleSizeFilter(40)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none">40</button>
+                <button onclick="toggleSizeFilter(41)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none">41</button>
+                <button onclick="toggleSizeFilter(42)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none">42</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Catalog State: Loading -->
+        <div id="products-loading" class="flex flex-col items-center justify-center py-20 text-[#8C847A]">
+          <div class="w-10 h-10 border-2 border-t-[#D4AF37] border-b-transparent border-l-transparent border-r-transparent rounded-full animate-spin mb-4"></div>
+          <p class="text-xs uppercase tracking-widest font-semibold">Ищем лучшие пары...</p>
+        </div>
+
+        <!-- Catalog State: Error -->
+        <div id="products-error" class="hidden text-center py-20 text-[#8C847A]">
+          <p class="mb-4 text-sm font-light">Не удалось загрузить каталог</p>
+          <button onclick="loadProducts()" class="border border-[#1A1A1A] text-xs font-semibold tracking-widest uppercase px-6 py-3 hover:bg-[#1A1A1A] hover:text-[#FAF6F0] transition">
             Попробовать снова
           </button>
         </div>
 
-        <!-- Сетка товаров -->
-        <div id="products-grid"
-          class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <!-- Catalog State: Empty -->
+        <div id="products-empty" class="hidden text-center py-20 text-[#8C847A]">
+          <p class="text-sm font-light">К сожалению, в этом разделе товаров пока нет. Мы скоро добавим новые!</p>
         </div>
 
-        <!-- Нет товаров -->
-        <div id="products-empty" class="hidden text-gray-400 py-12">
-          <p>Товары скоро появятся — следите за обновлениями!</p>
+        <!-- Products Grid -->
+        <div id="products-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+          <!-- Filled dynamically -->
         </div>
       </section>
 
-      <!-- Brands -->
-      <section id="brands" class="bg-pink-50 py-10 text-center">
-        <h2 class="text-2xl font-semibold mb-6">Наши бренды</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 max-w-3xl mx-auto">
-          <div><p class="font-medium">👑 ZAZA</p></div>
-          <div><p class="font-medium">✨ Евромода</p></div>
-          <div><p class="font-medium">🌟 Робин</p></div>
-          <div><p class="font-medium">💎 Мисс Марис</p></div>
-          <div><p class="font-medium">🔥 VACS</p></div>
+      <!-- Luxury Brands Grid (Clean minimalist layout) -->
+      <section id="brands" class="bg-[#EFE9DF]/50 py-16 border-t border-b border-[#E5DCD3]">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+          <p class="text-[10px] tracking-[0.25em] text-[#8C847A] uppercase font-semibold mb-8">Наши Премиум Поставщики</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 max-w-4xl mx-auto text-sm font-serif-luxury tracking-widest text-[#1A1A1A] uppercase">
+            <div class="py-4 border border-[#FAF6F0] bg-white/40 shadow-sm flex items-center justify-center font-bold">ZAZA</div>
+            <div class="py-4 border border-[#FAF6F0] bg-white/40 shadow-sm flex items-center justify-center font-bold">Евромода</div>
+            <div class="py-4 border border-[#FAF6F0] bg-white/40 shadow-sm flex items-center justify-center font-bold">Робин</div>
+            <div class="py-4 border border-[#FAF6F0] bg-white/40 shadow-sm flex items-center justify-center font-bold">Мисс Марис</div>
+            <div class="py-4 border border-[#FAF6F0] bg-white/40 shadow-sm flex items-center justify-center font-bold">VACS</div>
+          </div>
         </div>
       </section>
 
-      <!-- About -->
-      <section id="about" class="px-6 text-center">
-        <h2 class="text-2xl font-semibold mb-6">Почему выбирают Talaria?</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-          <div><p>👠 Удобство</p></div>
-          <div><p>🌍 Поставки из Турции и Пекина</p></div>
-          <div><p>⭐ 6 лет опыта</p></div>
-          <div><p>💝 1000+ клиенток</p></div>
-          <div><p>✅ Контроль качества</p></div>
-          <div><p>🎨 Стильный дизайн</p></div>
+      <!-- About Section -->
+      <section id="about" class="max-w-4xl mx-auto px-6 py-20 text-center">
+        <h2 class="text-2xl md:text-4xl font-serif-luxury tracking-wide mb-6">Почему выбирают Talaria?</h2>
+        <p class="text-sm text-[#5C544A] tracking-wider mb-12 max-w-xl mx-auto leading-relaxed font-light">
+          Мы специализируемся на женской обуви нестандартных больших размеров. Каждая модель проходит строгий отбор по качеству материалов, долговечности колодки и утонченности силуэта.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left text-xs tracking-wider uppercase text-[#1A1A1A]">
+          <div class="p-6 bg-white border border-[#E5DCD3]">
+            <h3 class="font-bold tracking-widest mb-2 text-[#D4AF37]">КОМФОРТ И КОЛОДКА</h3>
+            <p class="text-[11px] text-[#8C847A] leading-relaxed lowercase">Анатомический крой, гарантирующий легкость при ходьбе на протяжении всего дня.</p>
+          </div>
+          <div class="p-6 bg-white border border-[#E5DCD3]">
+            <h3 class="font-bold tracking-widest mb-2 text-[#D4AF37]">ТУРЦИЯ И ПЕКИН</h3>
+            <p class="text-[11px] text-[#8C847A] leading-relaxed lowercase">Прямые поставки от проверенных фабричных брендов без лишних посредников.</p>
+          </div>
+          <div class="p-6 bg-white border border-[#E5DCD3]">
+            <h3 class="font-bold tracking-widest mb-2 text-[#D4AF37]">6 ЛЕТ ОПЫТА</h3>
+            <p class="text-[11px] text-[#8C847A] leading-relaxed lowercase">Мы точно знаем особенности подбора красивой обуви больших размеров.</p>
+          </div>
         </div>
       </section>
 
-      <!-- Contacts -->
-      <section id="contacts" class="bg-gray-50 py-10 text-center">
-        <h2 class="text-2xl font-semibold mb-6">Контакты</h2>
-        <div class="space-y-4 text-gray-700">
-          <p>📍 Ташкент, ул. Мирзо Улугбека, 99</p>
-          <p>📞 <a href="tel:+998908257337" class="text-pink-600 hover:underline">90-825-73-37</a></p>
-          <p>📱 <a href="https://www.instagram.com/talaria_by_zemfira" class="text-pink-600 hover:underline">@talaria_by_zemfira</a></p>
-          <p>💬 <a href="https://t.me/talariaUz" class="text-pink-600 hover:underline">@talariaUz</a></p>
+      <!-- Contacts & Map Section -->
+      <section id="contacts" class="bg-[#EFE9DF]/30 py-16 border-t border-[#E5DCD3]">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <!-- Text details -->
+          <div class="space-y-8 flex flex-col justify-center">
+            <div>
+              <h2 class="text-2xl md:text-3xl font-serif-luxury tracking-wide mb-2">Наш Шоурум</h2>
+              <p class="text-[10px] tracking-widest text-[#8C847A] uppercase">Будем рады видеть вас на примерке</p>
+            </div>
+            
+            <div class="space-y-4 text-sm font-light text-[#5C544A]">
+              <p class="flex items-center">
+                <span class="font-semibold text-[#1A1A1A] w-24 uppercase text-xs tracking-wider">Адрес:</span>
+                📍 Ташкент, ул. Мирзо Улугбека, 99
+              </p>
+              <p class="flex items-center">
+                <span class="font-semibold text-[#1A1A1A] w-24 uppercase text-xs tracking-wider">Телефон:</span>
+                📞 <a href="tel:+998908257337" class="hover:text-[#D4AF37] transition font-normal">90-825-73-37</a>
+              </p>
+              <p class="flex items-center">
+                <span class="font-semibold text-[#1A1A1A] w-24 uppercase text-xs tracking-wider">Instagram:</span>
+                📸 <a href="https://www.instagram.com/talaria_by_zemfira" target="_blank" class="hover:text-[#D4AF37] transition font-normal">@talaria_by_zemfira</a>
+              </p>
+              <p class="flex items-center">
+                <span class="font-semibold text-[#1A1A1A] w-24 uppercase text-xs tracking-wider">Telegram:</span>
+                💬 <a href="https://t.me/talariaUz" target="_blank" class="hover:text-[#D4AF37] transition font-normal">@talariaUz</a>
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-4">
+              <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank" class="px-5 py-3 border border-[#1A1A1A] text-xs uppercase tracking-widest font-semibold hover:bg-[#1A1A1A] hover:text-[#FAF6F0] transition">
+                Построить маршрут в Яндекс
+              </a>
+              <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank" class="px-5 py-3 bg-[#1A1A1A] text-[#FAF6F0] text-xs uppercase tracking-widest font-semibold hover:bg-[#D4AF37] transition">
+                Посмотреть отзывы
+              </a>
+            </div>
+          </div>
+          
+          <!-- Embedded Clean Map -->
+          <div class="w-full h-80 lg:h-auto rounded-none overflow-hidden border border-[#E5DCD3] relative">
+            <iframe src="https://yandex.ru/map-widget/v1/?ll=69.340268%2C41.328329&mode=search&oid=107386008581&z=16" 
+              class="w-full h-full border-0 absolute inset-0" allowfullscreen="true" style="position:relative;"></iframe>
+          </div>
         </div>
       </section>
+
     </main>
 
-    <!-- Наш магазин -->
-    <section class="bg-white py-10 text-center">
-      <h2 class="text-2xl font-semibold mb-6 text-gray-800">Наш магазин</h2>
-      <p class="text-gray-600 mb-8">Добро пожаловать! Вы можете построить маршрут, посмотреть или оставить отзыв на Яндекс.Картах.</p>
-      <div class="flex flex-wrap justify-center gap-3">
-        <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
-           class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition">
-          Наш магазин
-        </a>
-        <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
-           class="px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition">
-          Построить маршрут
-        </a>
-        <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
-           class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition">
-          Посмотреть отзывы
-        </a>
-        <a href="https://yandex.uz/maps/-/CLCNaTNy" target="_blank"
-           class="px-5 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition">
-          Оставить отзыв
-        </a>
-      </div>
-    </section>
-
     <!-- Footer -->
-    <footer class="bg-pink-700 text-white text-center py-6 text-sm">
-      <p>&copy; 2025 Talaria. Все права защищены.</p>
-      <p>Премиальная женская обувь в Ташкенте</p>
+    <footer class="bg-[#1A1A1A] text-[#FAF6F0] py-10 border-t border-[#D4AF37]/30">
+      <div class="max-w-7xl mx-auto px-6 text-center space-y-4">
+        <h2 class="text-xl font-serif-luxury tracking-widest">TALARIA</h2>
+        <p class="text-[10px] tracking-widest text-[#8C847A] uppercase font-light">Эксклюзивная обувь больших размеров в Ташкенте</p>
+        <div class="w-12 h-px bg-[#D4AF37] mx-auto my-6"></div>
+        <p class="text-[10px] tracking-widest text-[#5C544A]">&copy; 2026 Talaria. Все права защищены.</p>
+      </div>
     </footer>
 
+    <!-- ========================================== -->
+    <!--          SLIDING CART DRAWER CONTAINER     -->
+    <!-- ========================================== -->
+    <div id="cart-overlay" onclick="toggleCart(false)" class="fixed inset-0 bg-black/40 z-[90] backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300"></div>
+    
+    <div id="cart-drawer" class="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-[#FAF6F0] shadow-2xl z-[100] transform translate-x-full transition-transform duration-300 ease-in-out border-l border-[#E5DCD3] flex flex-col justify-between">
+      
+      <!-- Drawer Header -->
+      <div class="px-6 py-5 border-b border-[#E5DCD3] flex items-center justify-between">
+        <h3 class="text-sm font-bold tracking-[0.2em] uppercase text-[#1A1A1A]">ВАША КОРЗИНА</h3>
+        <button onclick="toggleCart(false)" class="p-1 hover:text-[#D4AF37] transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Cart Content (Scrollable) -->
+      <div class="flex-grow overflow-y-auto px-6 py-4" id="cart-items-container">
+        <!-- Filled dynamically -->
+      </div>
+
+      <!-- Cart Summary & Checkout Form -->
+      <div class="border-t border-[#E5DCD3] bg-white p-6 space-y-4">
+        <div class="flex justify-between items-center text-xs tracking-wider font-semibold">
+          <span class="text-[#8C847A] uppercase">ИТОГО К ОПЛАТЕ:</span>
+          <span id="cart-total-price" class="text-sm font-bold text-[#1A1A1A]">0 сум</span>
+        </div>
+
+        <div id="checkout-form-container" class="hidden space-y-3 pt-4 border-t border-[#FAF6F0]">
+          <h4 class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37]">Оформление заказа</h4>
+          <input type="text" id="order-name" placeholder="Ваше Имя" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+          <input type="tel" id="order-phone" placeholder="Телефон (+998XXXXXXXXX)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+          
+          <select id="order-delivery" onchange="handleDeliveryChange()" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none">
+            <option value="pickup">Самовывоз (ул. Мирзо Улугбека, 99)</option>
+            <option value="delivery">Доставка курьером по Ташкенту</option>
+          </select>
+          <input type="text" id="order-address" placeholder="Адрес доставки" class="hidden w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+          
+          <select id="order-payment" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none">
+            <option value="cash">Оплата наличными / при получении</option>
+            <option value="click">Картой через CLICK</option>
+            <option value="payme">Картой через PAYME</option>
+          </select>
+
+          <button onclick="submitOrder()" id="btn-submit-order" class="w-full bg-[#1A1A1A] text-white py-3 text-xs tracking-[0.2em] uppercase font-semibold hover:bg-[#D4AF37] transition">
+            ПОДТВЕРДИТЬ ЗАКАЗ
+          </button>
+        </div>
+
+        <button onclick="showCheckoutForm()" id="btn-checkout-trigger" class="w-full bg-[#1A1A1A] text-white py-3.5 text-xs tracking-[0.2em] uppercase font-semibold hover:bg-[#D4AF37] transition">
+          ПЕРЕЙТИ К ОФОРМЛЕНИЮ
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!--       ORDER SUCCESS & PAYMENT MODAL        -->
+    <!-- ========================================== -->
+    <div id="payment-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center px-4 bg-black/60 backdrop-blur-md">
+      <div class="bg-[#FAF6F0] border border-[#E5DCD3] w-full max-w-md p-8 text-center shadow-2xl relative">
+        <button onclick="closePaymentModal()" class="absolute top-4 right-4 text-[#8C847A] hover:text-[#1A1A1A]">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        
+        <div class="w-12 h-12 bg-[#D4AF37]/15 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-6 h-6 text-[#D4AF37]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path></svg>
+        </div>
+        
+        <h3 class="text-lg font-serif-luxury font-bold mb-2">Заказ успешно оформлен!</h3>
+        <p class="text-xs text-[#8C847A] uppercase tracking-wider mb-6">Номер заказа: #<span id="success-order-id">--</span></p>
+        
+        <!-- Standard translation detail -->
+        <div id="payment-details-card" class="bg-white border border-[#E5DCD3] p-5 mb-6 text-left space-y-3">
+          <p class="text-xs font-semibold uppercase tracking-wider text-[#D4AF37] border-b border-[#FAF6F0] pb-2">Инструкция к оплате:</p>
+          <div class="text-xs text-[#5C544A] space-y-1 leading-relaxed">
+            <p><strong>Получатель:</strong> <span id="payment-card-holder">Владелец Карты</span></p>
+            <p><strong>Номер карты:</strong> <span id="payment-card-number" class="font-bold tracking-wider text-[#1A1A1A]">8600 ---- ---- ----</span></p>
+            <p><strong>К оплате:</strong> <span id="success-total-price" class="font-bold text-red-600">0 сум</span></p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <!-- External direct buttons -->
+          <a id="btn-click-pay" href="#" target="_blank" class="hidden w-full bg-blue-500 hover:bg-blue-600 text-white text-xs tracking-wider uppercase font-semibold py-3 transition flex items-center justify-center gap-2">
+            📲 ОПЛАТИТЬ ЧЕРЕЗ CLICK
+          </a>
+          <a id="btn-payme-pay" href="#" target="_blank" class="hidden w-full bg-teal-500 hover:bg-teal-600 text-white text-xs tracking-wider uppercase font-semibold py-3 transition flex items-center justify-center gap-2">
+            📲 ОПЛАТИТЬ ЧЕРЕЗ PAYME
+          </a>
+          <button onclick="closePaymentModal()" class="w-full bg-[#1A1A1A] hover:bg-[#D4AF37] text-white text-xs tracking-wider uppercase font-semibold py-3 transition">
+            ПОНЯТНО, СПАСИБО!
+          </button>
+        </div>
+        
+        <p class="text-[10px] text-[#8C847A] mt-4">Наш менеджер свяжется с вами в течение 15 минут для подтверждения заказа.</p>
+      </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="config.js"></script>
     <script>
       const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+      
+      let allProducts = [];
+      let activeCategory = 'all';
+      let activeSize = null;
+      let searchQuery = '';
+      
+      // Cart management
+      let cart = JSON.parse(localStorage.getItem('talaria_cart') || '[]');
 
+      // ─── Categories & Keywords Mapping ───
+      function getCategory(p) {
+        const text = ((p.title || '') + ' ' + (p.description || '')).toLowerCase();
+        if (text.includes('кроссовк') || text.includes('кед')) return 'sneakers';
+        if (text.includes('туфли') || text.includes('каблук')) return 'shoes';
+        if (text.includes('босонож') || text.includes('сандал')) return 'sandals';
+        if (text.includes('сабо') || text.includes('слипон') || text.includes('шлеп')) return 'sabots';
+        return 'other';
+      }
+
+      // ─── Format Money ───
+      function formatPrice(val) {
+        if (!val) return 'Цена не указана';
+        return val;
+      }
+
+      // ─── Product Card HTML Generator ───
       function productCard(p) {
         const photo = (p.photos && p.photos.length > 0)
           ? p.photos[0]
           : 'https://via.placeholder.com/300x300?text=Нет+фото';
+          
         return `
-          <div class="cursor-pointer group" onclick="openProduct(${p.id})">
-            <div class="overflow-hidden rounded-2xl aspect-square bg-gray-100">
-              <img src="${photo}" alt="Обувь"
-                class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'">
+          <div class="group relative cursor-pointer flex flex-col justify-between h-full bg-white border border-[#E5DCD3]/50 p-4 transition-all duration-300 hover:shadow-lg hover:border-[#D4AF37]" onclick="openProduct(${p.id})">
+            <div>
+              <!-- Image Container -->
+              <div class="overflow-hidden aspect-square bg-gray-50 relative">
+                <img src="${photo}" alt="${p.title}"
+                  class="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                  onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'">
+                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition duration-300"></div>
+              </div>
+              
+              <!-- Content -->
+              <h3 class="text-xs font-semibold tracking-wider text-[#1A1A1A] mt-4 mb-1 line-clamp-1 uppercase">${p.title || 'Товар'}</h3>
+              
+              <!-- Sizes -->
+              ${p.sizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider mb-2">Размеры: ${p.sizes}</p>` : ''}
             </div>
-            <p class="text-pink-600 text-sm font-semibold mt-2 text-center">${p.price || ''}</p>
+            
+            <!-- Price and Details -->
+            <div class="flex items-center justify-between border-t border-[#FAF6F0] pt-3 mt-auto">
+              <span class="text-xs font-bold text-[#D4AF37]">${p.price || ''}</span>
+              <span class="text-[9px] tracking-widest text-[#1A1A1A] uppercase group-hover:text-[#D4AF37] transition font-bold">ПОДРОБНЕЕ →</span>
+            </div>
           </div>`;
       }
 
+      // ─── Load Products ───
       async function loadProducts() {
         const grid    = document.getElementById('products-grid');
         const loading = document.getElementById('products-loading');
@@ -195,21 +456,16 @@
         try {
           const { data, error: err } = await _sb
             .from('products')
-            .select('id, title, sizes, price, photos')
+            .select('id, title, sizes, price, photos, description')
             .eq('is_available', true)
-            .order('created_at', { ascending: false })
-            .limit(24);
+            .order('created_at', { ascending: false });
 
           if (err) throw err;
+          
+          allProducts = data || [];
           loading.classList.add('hidden');
-
-          if (!data || data.length === 0) {
-            empty.classList.remove('hidden');
-            return;
-          }
-
-          grid.innerHTML = data.map(productCard).join('');
-          grid.classList.remove('hidden');
+          
+          applyFilters();
         } catch (e) {
           console.error(e);
           loading.classList.add('hidden');
@@ -217,12 +473,321 @@
         }
       }
 
+      // ─── Filter Mechanics ───
+      function filterCategory(cat) {
+        activeCategory = cat;
+        
+        // Update styling of buttons
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+          btn.classList.remove('border-[#1A1A1A]', 'text-[#1A1A1A]');
+          btn.classList.add('border-transparent', 'text-[#8C847A]');
+        });
+        
+        const activeBtn = document.getElementById(`cat-${cat}`);
+        if (activeBtn) {
+          activeBtn.classList.remove('border-transparent', 'text-[#8C847A]');
+          activeBtn.classList.add('border-[#1A1A1A]', 'text-[#1A1A1A]');
+        }
+        
+        applyFilters();
+      }
+
+      function toggleSizeFilter(size) {
+        const btns = document.querySelectorAll('.size-filter-btn');
+        if (activeSize === size) {
+          activeSize = null;
+          // reset visual active
+          btns.forEach(btn => {
+            if(btn.textContent == size) {
+              btn.classList.remove('bg-[#1A1A1A]', 'text-white', 'border-[#1A1A1A]');
+              btn.classList.add('border-[#E5DCD3]');
+            }
+          });
+        } else {
+          activeSize = size;
+          // set visual active
+          btns.forEach(btn => {
+            if(btn.textContent == size) {
+              btn.classList.add('bg-[#1A1A1A]', 'text-white', 'border-[#1A1A1A]');
+              btn.classList.remove('border-[#E5DCD3]');
+            } else {
+              btn.classList.remove('bg-[#1A1A1A]', 'text-white', 'border-[#1A1A1A]');
+              btn.classList.add('border-[#E5DCD3]');
+            }
+          });
+        }
+        applyFilters();
+      }
+
+      function handleSearch() {
+        searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+        applyFilters();
+      }
+
+      function applyFilters() {
+        const grid  = document.getElementById('products-grid');
+        const empty = document.getElementById('products-empty');
+        
+        let filtered = [...allProducts];
+        
+        // 1. Category filter
+        if (activeCategory !== 'all') {
+          filtered = filtered.filter(p => getCategory(p) === activeCategory);
+        }
+        
+        // 2. Size filter
+        if (activeSize !== null) {
+          filtered = filtered.filter(p => {
+            if (!p.sizes) return false;
+            // Parses e.g. "36,37,38" or "36-41" or details
+            const sizesStr = p.sizes.toString();
+            return sizesStr.includes(activeSize.toString());
+          });
+        }
+        
+        // 3. Search query filter
+        if (searchQuery) {
+          filtered = filtered.filter(p => {
+            const title = (p.title || '').toLowerCase();
+            const desc = (p.description || '').toLowerCase();
+            return title.includes(searchQuery) || desc.includes(searchQuery);
+          });
+        }
+        
+        if (filtered.length === 0) {
+          grid.classList.add('hidden');
+          empty.classList.remove('hidden');
+        } else {
+          empty.classList.add('hidden');
+          grid.innerHTML = filtered.map(productCard).join('');
+          grid.classList.remove('hidden');
+        }
+      }
+
       function openProduct(id) {
         window.location.href = `product.html?id=${id}`;
       }
 
+      // ==========================================
+      //             SHOPPING CART LOGIC            
+      // ==========================================
+      function toggleCart(open) {
+        const drawer = document.getElementById('cart-drawer');
+        const overlay = document.getElementById('cart-overlay');
+        if (open) {
+          renderCart();
+          drawer.classList.remove('translate-x-full');
+          overlay.classList.remove('opacity-0', 'pointer-events-none');
+        } else {
+          drawer.classList.add('translate-x-full');
+          overlay.classList.add('opacity-0', 'pointer-events-none');
+        }
+      }
+
+      function renderCart() {
+        const container = document.getElementById('cart-items-container');
+        const totalPriceEl = document.getElementById('cart-total-price');
+        const badge = document.getElementById('cart-badge');
+        
+        badge.textContent = cart.reduce((acc, item) => acc + item.quantity, 0);
+        if (cart.length > 0) {
+          badge.classList.remove('scale-0');
+        } else {
+          badge.classList.add('scale-0');
+        }
+
+        if (cart.length === 0) {
+          container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-20 text-[#8C847A] text-center">
+              <svg class="w-12 h-12 mb-3 stroke-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path></svg>
+              <p class="text-xs uppercase tracking-widest font-semibold">Ваша корзина пуста</p>
+            </div>`;
+          totalPriceEl.textContent = '0 сум';
+          document.getElementById('btn-checkout-trigger').classList.add('hidden');
+          document.getElementById('checkout-form-container').classList.add('hidden');
+          return;
+        }
+
+        document.getElementById('btn-checkout-trigger').classList.remove('hidden');
+
+        let total = 0;
+        container.innerHTML = cart.map((item, index) => {
+          // Parse price from string to clean number for calculations: e.g. "450 000 сум" -> 450000
+          const numericPrice = parseInt(item.price.replace(/[^0-9]/g, '')) || 0;
+          total += numericPrice * item.quantity;
+
+          return `
+            <div class="flex items-center gap-4 py-4 border-b border-[#E5DCD3]/50">
+              <img src="${item.photo}" class="w-16 h-16 object-cover border border-[#E5DCD3]" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'" />
+              <div class="flex-grow space-y-1">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] line-clamp-1">${item.title}</h4>
+                <p class="text-[10px] text-[#8C847A]">Размер: <span class="font-bold text-[#1A1A1A]">${item.size}</span></p>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 border border-[#E5DCD3] px-2 py-0.5 bg-white">
+                    <button onclick="updateQty(${index}, -1)" class="text-xs font-bold hover:text-[#D4AF37] px-1">-</button>
+                    <span class="text-[11px] font-semibold">${item.quantity}</span>
+                    <button onclick="updateQty(${index}, 1)" class="text-xs font-bold hover:text-[#D4AF37] px-1">+</button>
+                  </div>
+                  <span class="text-xs font-bold text-[#D4AF37]">${item.price}</span>
+                </div>
+              </div>
+              <button onclick="removeFromCart(${index})" class="text-[#8C847A] hover:text-red-500 transition p-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>`;
+        }).join('');
+
+        totalPriceEl.textContent = formatSum(total);
+      }
+
+      function formatSum(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " сум";
+      }
+
+      function updateQty(index, change) {
+        cart[index].quantity += change;
+        if (cart[index].quantity <= 0) {
+          cart.splice(index, 1);
+        }
+        localStorage.setItem('talaria_cart', JSON.stringify(cart));
+        renderCart();
+      }
+
+      function removeFromCart(index) {
+        cart.splice(index, 1);
+        localStorage.setItem('talaria_cart', JSON.stringify(cart));
+        renderCart();
+      }
+
+      // ==========================================
+      //             CHECKOUT & PAYMENT             
+      // ==========================================
+      function showCheckoutForm() {
+        document.getElementById('btn-checkout-trigger').classList.add('hidden');
+        document.getElementById('checkout-form-container').classList.remove('hidden');
+      }
+
+      function handleDeliveryChange() {
+        const delivery = document.getElementById('order-delivery').value;
+        const addressInput = document.getElementById('order-address');
+        if (delivery === 'delivery') {
+          addressInput.classList.remove('hidden');
+        } else {
+          addressInput.classList.add('hidden');
+        }
+      }
+
+      async function submitOrder() {
+        const name = document.getElementById('order-name').value.trim();
+        const phone = document.getElementById('order-phone').value.trim();
+        const delivery = document.getElementById('order-delivery').value;
+        const address = document.getElementById('order-address').value.trim();
+        const payment = document.getElementById('order-payment').value;
+        const btn = document.getElementById('btn-submit-order');
+
+        if (!name || !phone) {
+          alert('Пожалуйста, укажите Ваше Имя и Телефон для связи.');
+          return;
+        }
+
+        if (delivery === 'delivery' && !address) {
+          alert('Пожалуйста, укажите точный адрес доставки по Ташкенту.');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'ОФОРМЛЯЕМ...';
+
+        // Calculate total
+        let total = 0;
+        cart.forEach(item => {
+          const numericPrice = parseInt(item.price.replace(/[^0-9]/g, '')) || 0;
+          total += numericPrice * item.quantity;
+        });
+
+        try {
+          const orderData = {
+            customer_name: name,
+            phone: phone,
+            address: delivery === 'pickup' ? 'Самовывоз (Мирзо Улугбека 99)' : address,
+            delivery_type: delivery,
+            payment_method: payment,
+            items: cart,
+            total_price: total,
+            status: 'pending'
+          };
+
+          const { data, error } = await _sb
+            .from('orders')
+            .insert(orderData)
+            .select('id')
+            .single();
+
+          if (error) throw error;
+
+          const orderId = data.id;
+
+          // Clear local cart
+          cart = [];
+          localStorage.setItem('talaria_cart', JSON.stringify([]));
+          renderCart();
+          toggleCart(false);
+
+          // Reset checkout form fields
+          document.getElementById('order-name').value = '';
+          document.getElementById('order-phone').value = '';
+          document.getElementById('order-address').value = '';
+
+          // Open Order Success & Payment modal
+          openPaymentModal(orderId, name, total, payment);
+        } catch (e) {
+          console.error(e);
+          alert('Произошла ошибка при отправке заказа. Пожалуйста, свяжитесь с нами напрямую по телефону.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'ПОДТВЕРДИТЬ ЗАКАЗ';
+        }
+      }
+
+      function openPaymentModal(orderId, name, total, payment) {
+        document.getElementById('success-order-id').textContent = orderId;
+        document.getElementById('success-total-price').textContent = formatSum(total);
+        document.getElementById('payment-card-number').textContent = CONFIG.PAYMENT_CARD || 'Спросите у менеджера';
+        document.getElementById('payment-card-holder').textContent = CONFIG.CARD_HOLDER || 'Владелец Карты';
+
+        const btnClick = document.getElementById('btn-click-pay');
+        const btnPayme = document.getElementById('btn-payme-pay');
+        const cardDetailsCard = document.getElementById('payment-details-card');
+
+        btnClick.classList.add('hidden');
+        btnPayme.classList.add('hidden');
+        cardDetailsCard.classList.add('hidden');
+
+        if (payment === 'click' && CONFIG.PAYMENT_CARD) {
+          cardDetailsCard.classList.remove('hidden');
+          // Clicking click opens Click Me
+          btnClick.href = `https://click.uz/clickme?card=${CONFIG.PAYMENT_CARD.replace(/\s/g, '')}&amount=${total}`;
+          btnClick.classList.remove('hidden');
+        } else if (payment === 'payme' && CONFIG.PAYMENT_CARD) {
+          cardDetailsCard.classList.remove('hidden');
+          // Payme Link
+          btnPayme.href = `https://payme.uz/card/${CONFIG.PAYMENT_CARD.replace(/\s/g, '')}/${total}`;
+          btnPayme.classList.remove('hidden');
+        } else if (payment === 'cash') {
+          // cash doesn't need cards info
+        }
+
+        document.getElementById('payment-modal').classList.remove('hidden');
+      }
+
+      function closePaymentModal() {
+        document.getElementById('payment-modal').classList.add('hidden');
+      }
+
+      // Initial loads
       loadProducts();
 
+      // Live Chat support widget (Replain)
       window.replainSettings = { id: '1b40d6c4-a7a0-4f65-acde-cc2dfef2b88c' };
       (function(u){var s=document.createElement('script');s.async=true;s.src=u;
       var x=document.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);
