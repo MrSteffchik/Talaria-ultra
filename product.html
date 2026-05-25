@@ -14,7 +14,6 @@
     <!-- Google Fonts: Playfair Display for Serifs, Outfit for clean UI -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://yzhmgbjjbvcdhpjsnjla.supabase.co" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
     
     <link rel="icon" type="image/svg+xml"
@@ -29,9 +28,6 @@
       .font-serif-luxury {
         font-family: 'Playfair Display', serif;
       }
-      /* Защита от горизонтального переполнения на мобилке */
-      h1, h2, h3, p { overflow-wrap: anywhere; word-break: break-word; }
-      img { max-width: 100%; height: auto; }
     </style>
   </head>
 
@@ -90,7 +86,7 @@
         <div class="space-y-4">
           <!-- Main Image -->
           <div class="rounded-none overflow-hidden bg-white border border-[#E5DCD3] aspect-square relative">
-            <img id="main-photo" src="" alt="Обувь" width="600" height="600" decoding="async" class="w-full h-full object-cover">
+            <img id="main-photo" src="" alt="Обувь" class="w-full h-full object-cover">
           </div>
           <!-- Thumbnails Slider -->
           <div id="thumbs" class="flex gap-2 overflow-x-auto pb-1">
@@ -102,7 +98,7 @@
         <div class="space-y-6 md:py-2">
           <!-- Title & Price Block -->
           <div>
-            <h1 id="title" class="text-2xl md:text-3xl font-serif-luxury tracking-wide text-[#1A1A1A] uppercase mb-2 break-words"></h1>
+            <h1 id="title" class="text-2xl md:text-3xl font-serif-luxury tracking-wide text-[#1A1A1A] uppercase mb-2"></h1>
             <p id="price" class="text-xl font-bold text-[#D4AF37]"></p>
           </div>
 
@@ -264,30 +260,6 @@
 
       let productData = null;
       let selectedSize = null;
-
-      // Чистильщики от premium-эмодзи Telegram
-      const _EMOJI_RX = /[\u{1F1E0}-\u{1F1FF}\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1FAFF}☀-➿️‍]+/gu;
-      function cleanTitle(str, desc) {
-        if (!str) return 'Элегантная модель';
-        let c = str.replace(_EMOJI_RX, '').replace(/\s+/g, ' ').trim().replace(/^[\-—–|•·:.,\s]+|[\-—–|•·:.,\s]+$/g, '');
-        if (c.length < 2) {
-          const t = (desc || '').toLowerCase();
-          if (t.includes('кроссовк') || t.includes('кед')) return 'Стильные кроссовки';
-          if (t.includes('туфли') || t.includes('каблук')) return 'Элегантные туфли';
-          if (t.includes('босонож') || t.includes('сандал')) return 'Премиальные босоножки';
-          if (t.includes('сабо') || t.includes('слипон')) return 'Удобные сабо';
-          return 'Женская обувь Talaria';
-        }
-        return c;
-      }
-      function cleanSizes(str) {
-        if (!str) return [];
-        const m = str.match(/\b(3[4-9]|4[0-9]|5[0-2])\b/g);
-        return m ? [...new Set(m)].sort((a,b) => +a - +b) : [];
-      }
-      function cleanPrice(str) {
-        return (str || '').replace(_EMOJI_RX, '').replace(/\s+/g, ' ').trim();
-      }
       
       // Cart management
       let cart = JSON.parse(localStorage.getItem('talaria_cart') || '[]');
@@ -325,50 +297,51 @@
         const thumbs = document.getElementById('thumbs');
         if (photos.length > 1) {
           thumbs.innerHTML = photos.map((url, i) => `
-            <img src="${url}" alt="" loading="lazy" decoding="async" width="64" height="64"
+            <img src="${url}" alt=""
               class="w-16 h-16 object-cover cursor-pointer border ${i === 0 ? 'border-[#D4AF37]' : 'border-[#E5DCD3]'} hover:border-[#1A1A1A] transition flex-shrink-0"
               onclick="switchPhoto('${url}', this)">
           `).join('');
         }
 
-        // Standard details (с очисткой от premium-эмодзи)
-        const cleanedTitle = cleanTitle(p.title, p.description);
-        document.getElementById('price').textContent = cleanPrice(p.price) || 'Цена не указана';
-        document.getElementById('title').textContent = cleanedTitle;
+        // Standard details
+        document.getElementById('price').textContent = p.price || 'Цена не указана';
+        document.getElementById('title').textContent = p.title || 'Товар';
 
-        // Size chips selector — оставляем только числовые размеры
+        // Size chips selector
         const sizesContainer = document.getElementById('sizes-container');
-        const sizesArray = cleanSizes(p.sizes);
-        if (sizesArray.length > 0) {
-          sizesContainer.innerHTML = sizesArray.map(size => `
-            <button onclick="selectSize('${size}', this)" class="size-chip px-4 py-2 text-xs font-semibold border border-[#E5DCD3] hover:border-[#1A1A1A] transition bg-white text-[#1A1A1A]">
-              ${size}
-            </button>
-          `).join('');
+        if (p.sizes) {
+          // Parses e.g. "36, 37, 38" or "36-40" or similar
+          const sizesArray = p.sizes.split(/[,;\s]+/).map(s => s.trim()).filter(s => s.length > 0);
+
+          if (sizesArray.length > 0) {
+            sizesContainer.innerHTML = sizesArray.map(size => `
+              <button onclick="selectSize('${size}', this)" class="size-chip px-4 py-2 text-xs font-semibold border border-[#E5DCD3] hover:border-[#1A1A1A] transition bg-white text-[#1A1A1A]">
+                ${size}
+              </button>
+            `).join('');
+          } else {
+            document.getElementById('sizes-block').classList.add('hidden');
+          }
         } else {
           document.getElementById('sizes-block').classList.add('hidden');
         }
 
-        // Description (тоже чистим)
-        const cleanedDesc = (p.description || '').replace(_EMOJI_RX, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-        if (cleanedDesc) {
-          document.getElementById('desc').textContent = cleanedDesc;
+        // Description
+        if (p.description) {
+          document.getElementById('desc').textContent = p.description;
         } else {
           document.getElementById('desc-block').classList.add('hidden');
         }
 
         // Direct Telegram Order Link
-        const text = encodeURIComponent(`Хочу заказать: ${cleanedTitle} | ${cleanPrice(p.price)}`);
+        const text = encodeURIComponent(`Хочу заказать: ${p.title || 'Товар'} | ${p.price || ''}`);
         document.getElementById('tg-order').href = `https://t.me/nalabutenahZK?text=${text}`;
-
-        productData.title = cleanedTitle;
-        productData.price = cleanPrice(p.price) || p.price;
 
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('product').classList.remove('hidden');
 
         // Document Title
-        document.title = `Talaria — ${cleanedTitle}`;
+        document.title = `Talaria — ${p.title || 'Товар'}`;
         
         // Initial Cart Badge Load
         updateCartBadgeOnly();

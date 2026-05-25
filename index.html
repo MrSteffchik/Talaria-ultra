@@ -14,7 +14,6 @@
     <!-- Google Fonts: Playfair Display for Titles, Outfit for clean UI -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://yzhmgbjjbvcdhpjsnjla.supabase.co" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
     
     <meta name="description" content="Talaria — премиальный бутик женской обуви больших размеров в Ташкенте. Поставки из Турции и Пекина." />
@@ -28,8 +27,6 @@
       .font-serif-luxury {
         font-family: 'Playfair Display', serif;
       }
-      h1, h2, h3, p { overflow-wrap: anywhere; word-break: break-word; }
-      img { max-width: 100%; height: auto; }
     </style>
   </head>
 
@@ -216,7 +213,7 @@
               return `
                 <div class="group cursor-pointer bg-white border border-[#E5DCD3]/50 p-4 transition-all hover:shadow-lg hover:border-[#D4AF37]" onclick="openProduct(${p.id})">
                   <div class="overflow-hidden aspect-square bg-gray-50 mb-3">
-                    <img src="${photo}" loading="lazy" decoding="async" width="300" height="300" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'" />
+                    <img src="${photo}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'" />
                   </div>
                   <h4 class="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] truncate">${cleanPTitle}</h4>
                   ${cleanPSizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider mb-2">Размеры: ${cleanPSizes}</p>` : ''}
