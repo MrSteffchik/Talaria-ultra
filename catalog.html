@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="ru" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Talaria — Каталог женской обуви</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <!-- Google Fonts: Playfair Display, Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://yzhmgbjjbvcdhpjsnjla.supabase.co" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    
+    <meta name="description" content="Полный каталог премиальной женской обуви больших размеров в Ташкенте от бутика Talaria." />
+    
+    <style>
+      body {
+        font-family: 'Outfit', sans-serif;
+        background-color: #FAF6F0;
+        color: #1A1A1A;
+      }
+      .font-serif-luxury {
+        font-family: 'Playfair Display', serif;
+      }
+      h1, h2, h3, p { overflow-wrap: anywhere; word-break: break-word; }
+      img { max-width: 100%; height: auto; }
+    </style>
+  </head>
+
+  <body class="min-h-screen flex flex-col justify-between overflow-x-hidden antialiased">
+
+    <!-- Top Announcement Bar -->
+    <div class="bg-[#1A1A1A] text-[#FAF6F0] text-center text-[10px] sm:text-xs tracking-[0.2em] py-2.5 uppercase font-medium">
+      БЕСПЛАТНАЯ ДОСТАВКА ПО ТАШКЕНТУ • БЫСТРАЯ ОТПРАВКА ПО УЗБЕКИСТАНУ
+    </div>
+
+    <!-- Header / Navigation -->
+    <header class="sticky top-0 z-50 bg-[#FAF6F0]/90 backdrop-blur-md border-b border-[#E5DCD3]">
+      <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 md:px-12">
+        <!-- Logo -->
+        <a href="index.html" class="flex flex-col">
+          <span class="text-2xl sm:text-3xl font-serif-luxury tracking-wider text-[#1A1A1A]">TALARIA</span>
+          <span class="text-[9px] tracking-[0.3em] text-[#8C847A] uppercase font-semibold">Premium Women's Shoes</span>
+        </a>
+
+        <!-- Menu Tabs -->
+        <nav class="hidden md:block">
+          <ul class="flex space-x-6 lg:space-x-8 text-xs font-semibold tracking-[0.25em] uppercase text-[#5C544A]">
+            <li><a href="index.html" class="hover:text-[#D4AF37] transition duration-200">Главная</a></li>
+            <li><a href="catalog.html" class="text-[#D4AF37] border-b border-[#D4AF37] pb-1 font-bold">Каталог</a></li>
+            <li><a href="about.html" class="hover:text-[#D4AF37] transition duration-200">О нас</a></li>
+            <li><a href="contacts.html" class="hover:text-[#D4AF37] transition duration-200">Контакты</a></li>
+          </ul>
+        </nav>
+
+        <!-- Right Header Items -->
+        <div class="flex items-center space-x-4 sm:space-x-6">
+          <a href="tel:+998908257337" class="hidden sm:flex items-center text-xs tracking-wider text-[#5C544A] hover:text-[#D4AF37] font-semibold transition">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+            90 825-73-37
+          </a>
+          
+          <!-- Cart Trigger -->
+          <button onclick="toggleCart(true)" class="relative p-2 text-[#1A1A1A] hover:text-[#D4AF37] transition duration-200" aria-label="Корзина">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path>
+            </svg>
+            <span id="cart-badge" class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#D4AF37] text-[9px] font-bold text-white transition-all scale-0">0</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Mobile Navigation Tabs (Visible on mobile screens) -->
+      <div class="md:hidden flex justify-around border-t border-[#E5DCD3]/50 py-2.5 text-[10px] font-bold tracking-widest uppercase text-[#8C847A]">
+        <a href="index.html">Главная</a>
+        <a href="catalog.html" class="text-[#D4AF37]">Каталог</a>
+        <a href="about.html">О нас</a>
+        <a href="contacts.html">Контакты</a>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-6 py-10 md:py-16 md:px-12 w-full">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-5xl font-serif-luxury tracking-wide mb-3">Каталог обуви</h2>
+        <p class="text-[10px] sm:text-xs tracking-widest text-[#8C847A] uppercase">Изысканный комфорт для особенных женщин в размерах 41-44</p>
+      </div>
+
+      <!-- Filter Panel -->
+      <div class="mb-12 space-y-6">
+        <!-- Category Tabs -->
+        <div class="flex flex-wrap justify-center gap-2 border-b border-[#E5DCD3] pb-4">
+          <button onclick="filterCategory('all')" id="cat-all" class="cat-btn px-4 sm:px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-[#1A1A1A] text-[#1A1A1A] transition">Все модели</button>
+          <button onclick="filterCategory('shoes')" id="cat-shoes" class="cat-btn px-4 sm:px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-transparent text-[#8C847A] hover:text-[#1A1A1A] transition">Туфли</button>
+          <button onclick="filterCategory('sneakers')" id="cat-sneakers" class="cat-btn px-4 sm:px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-transparent text-[#8C847A] hover:text-[#1A1A1A] transition">Кроссовки</button>
+          <button onclick="filterCategory('sandals')" id="cat-sandals" class="cat-btn px-4 sm:px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-transparent text-[#8C847A] hover:text-[#1A1A1A] transition">Босоножки</button>
+          <button onclick="filterCategory('sabots')" id="cat-sabots" class="cat-btn px-4 sm:px-5 py-2.5 text-xs font-semibold uppercase tracking-widest border-b-2 border-transparent text-[#8C847A] hover:text-[#1A1A1A] transition">Сабо и Слипоны</button>
+        </div>
+
+        <!-- Search and Size Filter Grid -->
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+          <!-- Search Bar -->
+          <div class="relative w-full md:w-80">
+            <input type="text" id="search-input" oninput="handleSearch()" placeholder="Поиск модели..." 
+              class="w-full bg-[#FAF6F0] text-xs px-4 py-3 pl-10 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none transition" />
+            <svg class="absolute left-3.5 top-3.5 w-4 h-4 text-[#8C847A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+
+          <!-- Sizes -->
+          <div class="flex items-center space-x-3 w-full md:w-auto overflow-x-auto py-1">
+            <span class="text-xs text-[#8C847A] uppercase tracking-wider whitespace-nowrap">Размер:</span>
+            <div class="flex gap-1.5" id="size-filters-container">
+              <button onclick="toggleSizeFilter(35)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">35</button>
+              <button onclick="toggleSizeFilter(36)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">36</button>
+              <button onclick="toggleSizeFilter(37)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">37</button>
+              <button onclick="toggleSizeFilter(38)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">38</button>
+              <button onclick="toggleSizeFilter(39)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">39</button>
+              <button onclick="toggleSizeFilter(40)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">40</button>
+              <button onclick="toggleSizeFilter(41)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">41</button>
+              <button onclick="toggleSizeFilter(42)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">42</button>
+              <button onclick="toggleSizeFilter(43)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">43</button>
+              <button onclick="toggleSizeFilter(44)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">44</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- State: Loading -->
+      <div id="products-loading" class="flex flex-col items-center justify-center py-24 text-[#8C847A]">
+        <div class="w-10 h-10 border-2 border-t-[#D4AF37] border-b-transparent border-l-transparent border-r-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-xs uppercase tracking-widest font-semibold">Загружаем изысканные модели...</p>
+      </div>
+
+      <!-- State: Error -->
+      <div id="products-error" class="hidden text-center py-24 text-[#8C847A]">
+        <p class="mb-4 text-sm font-light">Ошибка соединения с базой</p>
+        <button onclick="loadProducts()" class="border border-[#1A1A1A] text-xs font-semibold tracking-widest uppercase px-6 py-3 hover:bg-[#1A1A1A] hover:text-[#FAF6F0] transition">
+          Попробовать снова
+        </button>
+      </div>
+
+      <!-- State: Empty -->
+      <div id="products-empty" class="hidden text-center py-24 text-[#8C847A]">
+        <p class="text-sm font-light">По вашему запросу ничего не найдено. Попробуйте выбрать другой фильтр.</p>
+      </div>
+
+      <!-- Products Grid -->
+      <div id="products-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+        <!-- Loaded dynamically -->
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#1A1A1A] text-[#FAF6F0] py-10 border-t border-[#D4AF37]/30">
+      <div class="max-w-7xl mx-auto px-6 text-center space-y-4">
+        <h2 class="text-xl font-serif-luxury tracking-widest">TALARIA</h2>
+        <p class="text-[9px] tracking-widest text-[#8C847A] uppercase font-light">Эксклюзивная обувь больших размеров в Ташкенте</p>
+        <div class="w-12 h-px bg-[#D4AF37] mx-auto my-4"></div>
+        <p class="text-[9px] tracking-widest text-[#5C544A]">&copy; 2026 Talaria. Все права защищены.</p>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script>
+      const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+      
+      let allProducts = [];
+      let activeCategory = 'all';
+      let activeSize = null;
+      let searchQuery = '';
+
+      function getCategory(p) {
+        const text = ((p.title || '') + ' ' + (p.description || '')).toLowerCase();
+        if (text.includes('кроссовк') || text.includes('кед')) return 'sneakers';
+        if (text.includes('туфли') || text.includes('каблук')) return 'shoes';
+        if (text.includes('босонож') || text.includes('сандал')) return 'sandals';
+        if (text.includes('сабо') || text.includes('слипон') || text.includes('шлеп')) return 'sabots';
+        return 'other';
+      }
+
+      function productCard(p) {
+        const photo = (p.photos && p.photos.length > 0) ? p.photos[0] : 'https://via.placeholder.com/300x300?text=Нет+фото';
+        
+        // Используем очистители из cart.js для защиты от смайликов!
+        const cleanedTitle = cleanTitle(p.title, p.description);
+        const cleanedSizes = cleanSizes(p.sizes);
+
+        return `
+          <div class="group relative bg-white border border-[#E5DCD3]/50 p-4 transition-all duration-300 hover:shadow-lg hover:border-[#D4AF37] flex flex-col justify-between h-full cursor-pointer" onclick="openProduct(${p.id})">
+            <div>
+              <div class="overflow-hidden aspect-square bg-gray-50 relative">
+                <img src="${photo}" alt="${cleanedTitle}" loading="lazy" decoding="async" width="300" height="300" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'">
+              </div>
+              <h3 class="text-xs font-bold tracking-wider text-[#1A1A1A] mt-4 mb-1 line-clamp-1 uppercase">${cleanedTitle}</h3>
+              ${cleanedSizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider mb-2">Размеры: ${cleanedSizes}</p>` : ''}
+            </div>
+            
+            <div class="flex items-center justify-between border-t border-[#FAF6F0] pt-3 mt-auto">
+              <span class="text-xs font-bold text-[#D4AF37]">${p.price || ''}</span>
+              <span class="text-[9px] font-bold tracking-widest text-[#1A1A1A] group-hover:text-[#D4AF37] transition uppercase">ПОДРОБНЕЕ →</span>
+            </div>
+          </div>`;
+      }
+
+      const CACHE_KEY = 'talaria_products_cache_v1';
+      const CACHE_TTL = 3 * 60 * 1000; // 3 минуты — мгновенная подгрузка при повторных переходах
+
+      async function loadProducts() {
+        const grid    = document.getElementById('products-grid');
+        const loading = document.getElementById('products-loading');
+        const error   = document.getElementById('products-error');
+        const empty   = document.getElementById('products-empty');
+
+        // Мгновенно показываем кеш, если он свежий
+        try {
+          const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+          if (cached && Date.now() - cached.t < CACHE_TTL && Array.isArray(cached.d)) {
+            allProducts = cached.d;
+            loading.classList.add('hidden');
+            applyFilters();
+          }
+        } catch (e) { /* пусто */ }
+
+        if (allProducts.length === 0) {
+          loading.classList.remove('hidden');
+          grid.classList.add('hidden');
+          error.classList.add('hidden');
+          empty.classList.add('hidden');
+        }
+
+        try {
+          const { data, error: err } = await _sb
+            .from('products')
+            .select('id, title, sizes, price, photos, description')
+            .eq('is_available', true)
+            .order('created_at', { ascending: false });
+
+          if (err) throw err;
+
+          allProducts = data || [];
+          try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: allProducts })); } catch (e) {}
+          loading.classList.add('hidden');
+
+          applyFilters();
+        } catch (e) {
+          console.error(e);
+          loading.classList.add('hidden');
+          if (allProducts.length === 0) error.classList.remove('hidden');
+        }
+      }
+
+      function filterCategory(cat) {
+        activeCategory = cat;
+        
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+          btn.classList.remove('border-[#1A1A1A]', 'text-[#1A1A1A]');
+          btn.classList.add('border-transparent', 'text-[#8C847A]');
+        });
+        
+        const activeBtn = document.getElementById(`cat-${cat}`);
+        if (activeBtn) {
+          activeBtn.classList.remove('border-transparent', 'text-[#8C847A]');
+          activeBtn.classList.add('border-[#1A1A1A]', 'text-[#1A1A1A]');
+        }
+        
+        applyFilters();
+      }
+
+      function toggleSizeFilter(size) {
+        const btns = document.querySelectorAll('.size-filter-btn');
+        if (activeSize === size) {
+          activeSize = null;
+          btns.forEach(btn => {
+            if(btn.textContent.trim() == size) {
+              btn.classList.remove('bg-[#1A1A1A]', 'text-white', 'border-[#1A1A1A]');
+              btn.classList.add('bg-white', 'border-[#E5DCD3]');
+            }
+          });
+        } else {
+          activeSize = size;
+          btns.forEach(btn => {
+            if(btn.textContent.trim() == size) {
+              btn.classList.add('bg-[#1A1A1A]', 'text-white', 'border-[#1A1A1A]');
+              btn.classList.remove('bg-white', 'border-[#E5DCD3]');
+            } else {
+              btn.classList.remove('bg-[#1A1A1A]', 'text-white', 'border-[#1A1A1A]');
+              btn.classList.add('bg-white', 'border-[#E5DCD3]');
+            }
+          });
+        }
+        applyFilters();
+      }
+
+      function handleSearch() {
+        searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+        applyFilters();
+      }
+
+      function applyFilters() {
+        const grid  = document.getElementById('products-grid');
+        const empty = document.getElementById('products-empty');
+        
+        let filtered = [...allProducts];
+        
+        if (activeCategory !== 'all') {
+          filtered = filtered.filter(p => getCategory(p) === activeCategory);
+        }
+        
+        if (activeSize !== null) {
+          filtered = filtered.filter(p => {
+            if (!p.sizes) return false;
+            // Используем очищенную строку размеров для точного сравнения!
+            const cleanSizesStr = cleanSizes(p.sizes.toString());
+            return cleanSizesStr.split(', ').includes(activeSize.toString());
+          });
+        }
+        
+        if (searchQuery) {
+          filtered = filtered.filter(p => {
+            const title = cleanTitle(p.title, p.description).toLowerCase();
+            const desc = (p.description || '').toLowerCase();
+            return title.includes(searchQuery) || desc.includes(searchQuery);
+          });
+        }
+        
+        if (filtered.length === 0) {
+          grid.classList.add('hidden');
+          empty.classList.remove('hidden');
+        } else {
+          empty.classList.add('hidden');
+          grid.innerHTML = filtered.map(productCard).join('');
+          grid.classList.remove('hidden');
+        }
+      }
+
+      function openProduct(id) {
+        window.location.href = `product.html?id=${id}`;
+      }
+
+      loadProducts();
+    </script>
+    <script src="cart.js"></script>
+  </body>
+</html>

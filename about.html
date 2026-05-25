@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Talaria — О нас</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <meta name="description" content="История бутика Talaria — как Земфира создала уникальный магазин женской обуви больших размеров в Ташкенте." />
+    <style>
+      body { font-family: 'Outfit', sans-serif; background-color: #FAF6F0; color: #1A1A1A; }
+      .font-serif-luxury { font-family: 'Playfair Display', serif; }
+    </style>
+  </head>
+
+  <body class="min-h-screen flex flex-col justify-between overflow-x-hidden antialiased">
+
+    <!-- Top Bar -->
+    <div class="bg-[#1A1A1A] text-[#FAF6F0] text-center text-[10px] sm:text-xs tracking-[0.2em] py-2.5 uppercase font-medium">
+      БЕСПЛАТНАЯ ДОСТАВКА ПО ТАШКЕНТУ &bull; БЫСТРАЯ ОТПРАВКА ПО УЗБЕКИСТАНУ
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-[#FAF6F0]/90 backdrop-blur-md border-b border-[#E5DCD3]">
+      <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 md:px-12">
+        <a href="index.html" class="flex flex-col">
+          <span class="text-2xl sm:text-3xl font-serif-luxury tracking-wider text-[#1A1A1A]">TALARIA</span>
+          <span class="text-[9px] tracking-[0.3em] text-[#8C847A] uppercase font-semibold">Premium Women's Shoes</span>
+        </a>
+        <nav class="hidden md:block">
+          <ul class="flex space-x-6 lg:space-x-8 text-xs font-semibold tracking-[0.25em] uppercase text-[#5C544A]">
+            <li><a href="index.html" class="hover:text-[#D4AF37] transition">Главная</a></li>
+            <li><a href="catalog.html" class="hover:text-[#D4AF37] transition">Каталог</a></li>
+            <li><a href="about.html" class="text-[#D4AF37] border-b border-[#D4AF37] pb-1 font-bold">О нас</a></li>
+            <li><a href="contacts.html" class="hover:text-[#D4AF37] transition">Контакты</a></li>
+          </ul>
+        </nav>
+        <div class="flex items-center space-x-4 sm:space-x-6">
+          <a href="tel:+998908257337" class="hidden sm:flex items-center text-xs tracking-wider text-[#5C544A] hover:text-[#D4AF37] font-semibold transition">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+            90 825-73-37
+          </a>
+          <button onclick="toggleCart(true)" class="relative p-2 text-[#1A1A1A] hover:text-[#D4AF37] transition" aria-label="Корзина">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path></svg>
+            <span id="cart-badge" class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#D4AF37] text-[9px] font-bold text-white transition-all scale-0">0</span>
+          </button>
+        </div>
+      </div>
+      <!-- Mobile Nav -->
+      <div class="md:hidden flex justify-around border-t border-[#E5DCD3]/50 py-2.5 text-[10px] font-bold tracking-widest uppercase text-[#8C847A]">
+        <a href="index.html">Главная</a>
+        <a href="catalog.html">Каталог</a>
+        <a href="about.html" class="text-[#D4AF37]">О нас</a>
+        <a href="contacts.html">Контакты</a>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-grow">
+
+      <!-- Hero -->
+      <section class="relative py-20 sm:py-28 px-6 bg-gradient-to-b from-[#EFE9DF] to-[#FAF6F0] border-b border-[#E5DCD3]/50 text-center">
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-serif-luxury font-light tracking-wider mb-4">О бутике Talaria</h1>
+        <p class="text-xs sm:text-sm tracking-widest text-[#8C847A] uppercase max-w-lg mx-auto">История, которая началась с одной простой идеи</p>
+      </section>
+
+      <!-- Story of Zemfira -->
+      <section class="max-w-3xl mx-auto px-6 py-16 md:py-24 space-y-10">
+        <div class="text-center space-y-4">
+          <p class="text-xs tracking-[0.3em] text-[#D4AF37] uppercase font-bold">Основательница</p>
+          <h2 class="text-2xl sm:text-4xl font-serif-luxury tracking-wide italic">Земфира</h2>
+          <div class="w-12 h-px bg-[#D4AF37] mx-auto"></div>
+        </div>
+
+        <div class="space-y-6 text-sm sm:text-base text-[#5C544A] leading-relaxed font-light">
+          <p>
+            Всё началось больше шести лет назад, когда Земфира столкнулась с проблемой, знакомой тысячам женщин: найти стильную и удобную обувь большого размера в Ташкенте было практически невозможно. В магазинах редко встречались модели 41-го или 42-го размеров, а если и встречались, то они не отличались ни красотой, ни качеством.
+          </p>
+          <p>
+            Земфира решила взять дело в свои руки. Она лично отправилась на лучшие обувные фабрики Турции и Пекина, чтобы найти производителей, которые сочетают элегантный дизайн с анатомическим комфортом. Месяцы поисков, переговоров и тестирования привели к рождению бутика Talaria.
+          </p>
+          <p>
+            Сегодня Talaria — это не просто магазин обуви. Это место, где каждая женщина с нестандартным размером ноги может почувствовать себя особенной. Земфира по-прежнему лично отбирает каждую модель, проверяя качество кожи, мягкость стельки, прочность подошвы и, конечно, красоту силуэта.
+          </p>
+
+          <blockquote class="border-l-2 border-[#D4AF37] pl-6 py-2 text-[#1A1A1A] font-serif-luxury text-lg sm:text-xl italic leading-relaxed">
+            «Я знаю, каково это — стоять в магазине и понимать, что ни одна красивая пара не подходит по размеру. Поэтому мы привозим обувь, в которой совпадает всё: стиль, комфорт и ваш размер.»
+          </blockquote>
+          <p class="text-xs text-[#8C847A] tracking-wider uppercase">— Земфира, основательница Talaria</p>
+        </div>
+      </section>
+
+      <!-- Our Values -->
+      <section class="bg-[#EFE9DF]/40 py-16 sm:py-20 border-t border-b border-[#E5DCD3]">
+        <div class="max-w-5xl mx-auto px-6">
+          <div class="text-center mb-12 space-y-2">
+            <h2 class="text-2xl sm:text-3xl font-serif-luxury tracking-wide">Наши принципы</h2>
+            <p class="text-xs tracking-widest text-[#8C847A] uppercase">То, чем мы руководствуемся каждый день</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="bg-white border border-[#E5DCD3] p-6 space-y-3">
+              <div class="w-10 h-10 border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] font-serif-luxury text-base font-bold">01</div>
+              <h4 class="text-xs font-bold tracking-widest uppercase">КАЧЕСТВО ВЫШЕ КОЛИЧЕСТВА</h4>
+              <p class="text-[11px] text-[#8C847A] leading-relaxed">Мы привозим ограниченные партии. Лучше меньше, но каждая пара — безупречна.</p>
+            </div>
+            <div class="bg-white border border-[#E5DCD3] p-6 space-y-3">
+              <div class="w-10 h-10 border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] font-serif-luxury text-base font-bold">02</div>
+              <h4 class="text-xs font-bold tracking-widest uppercase">ЛИЧНЫЙ ОТБОР</h4>
+              <p class="text-[11px] text-[#8C847A] leading-relaxed">Земфира сама тестирует и утверждает каждую модель, прежде чем она попадет в шоурум.</p>
+            </div>
+            <div class="bg-white border border-[#E5DCD3] p-6 space-y-3">
+              <div class="w-10 h-10 border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] font-serif-luxury text-base font-bold">03</div>
+              <h4 class="text-xs font-bold tracking-widest uppercase">ЧЕСТНЫЕ ЦЕНЫ</h4>
+              <p class="text-[11px] text-[#8C847A] leading-relaxed">Прямые поставки без посредников позволяют нам предлагать справедливую цену за премиальное качество.</p>
+            </div>
+            <div class="bg-white border border-[#E5DCD3] p-6 space-y-3">
+              <div class="w-10 h-10 border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] font-serif-luxury text-base font-bold">04</div>
+              <h4 class="text-xs font-bold tracking-widest uppercase">ЗАБОТА О КЛИЕНТКАХ</h4>
+              <p class="text-[11px] text-[#8C847A] leading-relaxed">Доставка с примеркой на дом, консультации по размерам и обмен — мы рядом на каждом этапе.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Numbers / Stats -->
+      <section class="max-w-4xl mx-auto px-6 py-16 sm:py-20 text-center">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-8">
+          <div class="space-y-1">
+            <p class="text-3xl sm:text-4xl font-serif-luxury text-[#D4AF37]">6+</p>
+            <p class="text-[10px] tracking-widest text-[#8C847A] uppercase font-semibold">Лет на рынке</p>
+          </div>
+          <div class="space-y-1">
+            <p class="text-3xl sm:text-4xl font-serif-luxury text-[#D4AF37]">1000+</p>
+            <p class="text-[10px] tracking-widest text-[#8C847A] uppercase font-semibold">Довольных клиенток</p>
+          </div>
+          <div class="space-y-1">
+            <p class="text-3xl sm:text-4xl font-serif-luxury text-[#D4AF37]">5</p>
+            <p class="text-[10px] tracking-widest text-[#8C847A] uppercase font-semibold">Премиум брендов</p>
+          </div>
+          <div class="space-y-1">
+            <p class="text-3xl sm:text-4xl font-serif-luxury text-[#D4AF37]">2</p>
+            <p class="text-[10px] tracking-widest text-[#8C847A] uppercase font-semibold">Страны поставщики</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Brands -->
+      <section class="bg-[#EFE9DF]/30 py-12 border-t border-[#E5DCD3]">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+          <p class="text-[10px] tracking-[0.25em] text-[#8C847A] uppercase font-semibold mb-8">Бренды, которым мы доверяем</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-sm font-serif-luxury tracking-widest text-[#1A1A1A] uppercase">
+            <div class="py-4 bg-white/60 border border-[#E5DCD3] flex items-center justify-center font-bold">ZAZA</div>
+            <div class="py-4 bg-white/60 border border-[#E5DCD3] flex items-center justify-center font-bold">Евромода</div>
+            <div class="py-4 bg-white/60 border border-[#E5DCD3] flex items-center justify-center font-bold">Робин</div>
+            <div class="py-4 bg-white/60 border border-[#E5DCD3] flex items-center justify-center font-bold">Мисс Марис</div>
+            <div class="py-4 bg-white/60 border border-[#E5DCD3] flex items-center justify-center font-bold">VACS</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="max-w-3xl mx-auto px-6 py-16 text-center space-y-6">
+        <h2 class="text-xl sm:text-2xl font-serif-luxury tracking-wide">Готовы найти свою идеальную пару?</h2>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="catalog.html" class="bg-[#1A1A1A] text-[#FAF6F0] hover:bg-[#D4AF37] px-8 py-3.5 text-xs font-semibold tracking-[0.2em] uppercase transition">
+            Открыть каталог
+          </a>
+          <a href="contacts.html" class="border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-[#FAF6F0] px-8 py-3.5 text-xs font-semibold tracking-[0.2em] uppercase transition">
+            Связаться с нами
+          </a>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#1A1A1A] text-[#FAF6F0] py-10 border-t border-[#D4AF37]/30">
+      <div class="max-w-7xl mx-auto px-6 text-center space-y-4">
+        <h2 class="text-xl font-serif-luxury tracking-widest">TALARIA</h2>
+        <p class="text-[9px] tracking-widest text-[#8C847A] uppercase font-light">Эксклюзивная обувь больших размеров в Ташкенте</p>
+        <div class="w-12 h-px bg-[#D4AF37] mx-auto my-4"></div>
+        <p class="text-[9px] tracking-widest text-[#5C544A]">&copy; 2026 Talaria. Все права защищены.</p>
+      </div>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="cart.js"></script>
+  </body>
+</html>

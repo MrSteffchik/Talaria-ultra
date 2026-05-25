@@ -43,34 +43,58 @@ _PHONE_RE  = re.compile(r"^[\d\s\-\+\(\)]{6,}$")
 _ORDER_RE  = re.compile(r"(заказ|@\w+)", re.IGNORECASE)
 _REVIEW_RE = re.compile(r"#отзыв|отзывклиент", re.IGNORECASE)
 
+# Все юникод-эмодзи (вкл. fallback-символы премиум-эмодзи Telegram)
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001F1E0-\U0001F1FF"
+    "\U0001F300-\U0001F5FF"
+    "\U0001F600-\U0001F64F"
+    "\U0001F680-\U0001F6FF"
+    "\U0001F700-\U0001F77F"
+    "\U0001F780-\U0001F7FF"
+    "\U0001F800-\U0001F8FF"
+    "\U0001F900-\U0001F9FF"
+    "\U0001FA00-\U0001FA6F"
+    "\U0001FA70-\U0001FAFF"
+    "☀-➿"
+    "️"
+    "‍"
+    "]+",
+    flags=re.UNICODE,
+)
 
-def extract_strikethrough(text: str, entities) -> set[tuple[int,int]]:
-    """Возвращает множество (start, end) зачёркнутых фрагментов."""
-    ranges = set()
-    if not entities:
-        return ranges
+
+def _utf16_slice(text: str, offset: int, length: int) -> str:
+    """Извлекает подстроку по UTF-16 offset/length (как у Telegram entities)."""
+    b = text.encode("utf-16-le")
+    return b[offset * 2 : (offset + length) * 2].decode("utf-16-le", errors="ignore")
+
+
+def strip_custom_emoji(text: str, entities) -> str:
+    """Удаляет из текста premium custom_emoji (Telegram возвращает их как
+    обычные эмодзи-плейсхолдеры, что ломает парсинг названия/размеров)."""
+    if not text or not entities:
+        return text
+    b = bytearray(text.encode("utf-16-le"))
+    ranges = []
     for e in entities:
-        if e.type == "strikethrough":
-            ranges.add((e.offset, e.offset + e.length))
-    return ranges
+        if e.type == "custom_emoji":
+            ranges.append((e.offset * 2, (e.offset + e.length) * 2))
+    for s, en in sorted(ranges, reverse=True):
+        del b[s:en]
+    return bytes(b).decode("utf-16-le", errors="ignore")
 
 
-def is_strikethrough(line: str, text: str, strike_ranges: set) -> bool:
-    """Проверяет, является ли строка полностью зачёркнутой."""
-    if not strike_ranges:
-        return False
-    try:
-        start = text.index(line)
-        end = start + len(line)
-        for (s, e) in strike_ranges:
-            if s <= start and end <= e:
-                return True
-    except ValueError:
-        pass
-    return False
+def clean_emoji(s: str) -> str:
+    """Убирает emoji-мусор из строки и обрезает по краям знаки-разделители."""
+    if not s:
+        return s
+    cleaned = _EMOJI_RE.sub("", s)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" \t-—–|•·:.,")
+    return cleaned
 
 
-def parse_caption(text: str, entities=None) -> dict | None:
+def parse_caption(text: str, strike_texts=None) -> dict | None:
     if not text:
         return None
     if _REVIEW_RE.search(text):
@@ -80,7 +104,7 @@ def parse_caption(text: str, entities=None) -> dict | None:
         log.info("Пропускаем: не товарный пост")
         return None
 
-    strike_ranges = extract_strikethrough(text, entities)
+    strike_texts = strike_texts or set()
 
     title = None
     sizes_parts: list[str] = []
@@ -98,31 +122,38 @@ def parse_caption(text: str, entities=None) -> dict | None:
             continue
 
         # Зачёркнутая строка с ценой = старая цена
-        if _PRICE_RE.search(line) and is_strikethrough(line, text, strike_ranges):
-            old_price = line
+        if _PRICE_RE.search(line) and any(line in s or s in line for s in strike_texts):
+            old_price = clean_emoji(line)
             continue
 
         # Обычная строка с ценой = текущая цена
         if _PRICE_RE.search(line):
-            price = line
+            price = clean_emoji(line)
             continue
 
-        # Строка только из цифр (размеры) или содержит ➡️
-        if _ARROW_RE.search(line) or (_SIZE_NUM.search(line) and _SIZE_ONLY.match(_ARROW_RE.sub("", line).replace(",", " ").strip())):
-            cleaned = _ARROW_RE.sub("", line).strip()
-            sizes_parts.append(cleaned)
+        # Размеры: строка с цифрами 35-52, либо помечена стрелкой ➡️
+        stripped = _ARROW_RE.sub("", line).strip()
+        digits_only = re.findall(r"\b(3[5-9]|4[0-9]|5[0-2])\b", stripped)
+        if digits_only and (_ARROW_RE.search(line) or _SIZE_ONLY.match(_EMOJI_RE.sub("", stripped).replace(",", " ").strip())):
+            sizes_parts.extend(digits_only)
             continue
 
         if title is None:
-            title = line
+            title = clean_emoji(line)
+            if not title:
+                title = None
         else:
-            desc_lines.append(line)
+            cleaned_line = clean_emoji(line)
+            if cleaned_line:
+                desc_lines.append(cleaned_line)
 
     # Без цены — не товар
     if not price:
         return None
 
-    sizes = ", ".join(sizes_parts) if sizes_parts else None
+    # Уникальные числовые размеры
+    unique_sizes = sorted(set(sizes_parts), key=int) if sizes_parts else []
+    sizes = ", ".join(unique_sizes) if unique_sizes else None
 
     # Показываем цену красиво: если есть скидка
     display_price = price or ""
@@ -191,7 +222,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not caption:
         return
 
-    parsed = parse_caption(caption, entities)
+    # Убираем premium custom_emoji из текста и собираем тексты зачёркнутых фрагментов
+    clean_caption = strip_custom_emoji(caption, entities)
+    strike_texts = {
+        _utf16_slice(caption, e.offset, e.length)
+        for e in entities if e.type == "strikethrough"
+    }
+
+    parsed = parse_caption(clean_caption, strike_texts)
     if not parsed:
         return
 
