@@ -70,6 +70,42 @@ def is_strikethrough(line: str, text: str, strike_ranges: set) -> bool:
     return False
 
 
+def clean_emoji(text: str) -> str:
+    if not text:
+        return ""
+    # Удаляем 4-байтовые символы эмодзи (диапазоны суррогатных пар и высших плоскостей)
+    clean = re.sub(r'[\U00010000-\U0010ffff]', '', text)
+    # Удаляем графические символы, стрелки, сердечки и значки
+    clean = re.sub(r'[\u2000-\u3300\u2600-\u27bf]', '', clean)
+    return clean.strip()
+
+def clean_text_fully(text: str) -> str:
+    clean = clean_emoji(text)
+    # Удаляем мусорные реакции в начале строки
+    clean = re.sub(r'^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,\*#]+', '', clean)
+    return clean.strip()
+
+def get_fallback_title(desc: str) -> str:
+    text = (desc or "").lower()
+    if 'кроссовк' in text or 'кед' in text:
+        return 'Стильные кроссовки'
+    if 'туфли' in text or 'каблук' in text:
+        return 'Элегантные туфли'
+    if 'босонож' in text or 'сандал' in text:
+        return 'Премиальные босоножки'
+    if 'сабо' in text or 'слипон' in text:
+        return 'Удобные сабо'
+    return 'Женская обувь Talaria'
+
+def clean_description(desc_lines: list[str]) -> str:
+    cleaned = []
+    for line in desc_lines:
+        clean = clean_emoji(line)
+        clean = re.sub(r'^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,\*]+', '', clean).strip()
+        if clean:
+            cleaned.append(clean)
+    return "\n".join(cleaned)
+
 def parse_caption(text: str, entities=None) -> dict | None:
     if not text:
         return None
@@ -122,18 +158,42 @@ def parse_caption(text: str, entities=None) -> dict | None:
     if not price:
         return None
 
-    sizes = ", ".join(sizes_parts) if sizes_parts else None
+    # Очищаем
+    cleaned_title = clean_text_fully(title)
+    cleaned_desc = clean_description(desc_lines)
+    
+    # Собираем и очищаем размеры
+    raw_sizes = ", ".join(sizes_parts) if sizes_parts else None
+    cleaned_sizes = ""
+    if raw_sizes:
+        sizes_clean = clean_emoji(raw_sizes)
+        found = re.findall(r'\b(3[4-9]|4[0-8])\b', sizes_clean)
+        if found:
+            cleaned_sizes = ", ".join(sorted(list(set(found))))
+            
+    # Если размеры не найдены, пробуем вытащить их из описания
+    if not cleaned_sizes and cleaned_desc:
+        found_sizes = re.findall(r'\b(3[5-9]|4[0-6])\b', cleaned_desc)
+        if found_sizes:
+            cleaned_sizes = ", ".join(sorted(list(set(found_sizes))))
+
+    # Если заголовок пустой или мусорный, даем красивый фолбек
+    if len(cleaned_title) < 2:
+        cleaned_title = get_fallback_title(cleaned_desc)
 
     # Показываем цену красиво: если есть скидка
     display_price = price or ""
+    display_price = clean_emoji(display_price)
+    
     if old_price and price:
-        display_price = f"{price} (было: {old_price})"
+        old_price_clean = clean_emoji(old_price)
+        display_price = f"{display_price} (было: {old_price_clean})"
 
     return {
-        "title":       title or "Товар",
-        "sizes":       sizes,
+        "title":       cleaned_title,
+        "sizes":       cleaned_sizes or None,
         "price":       display_price,
-        "description": "\n".join(desc_lines) or None,
+        "description": cleaned_desc or None,
     }
 
 
