@@ -34,7 +34,7 @@
 
     <!-- Top Announcement Bar -->
     <div class="bg-[#1A1A1A] text-[#FAF6F0] text-center text-[10px] sm:text-xs tracking-[0.2em] py-2.5 uppercase font-medium">
-      БЕСПЛАТНАЯ ДОСТАВКА ПО ТАШКЕНТУ • БЫСТРАЯ ОТПРАВКА ПО УЗБЕКИСТАНУ
+      ДОСТАВКА 40.000 СУМ ПО ТАШКЕНТУ С ПРИМЕРКОЙ • БЫСТРАЯ ОТПРАВКА ПО УЗБЕКИСТАНУ
     </div>
 
     <!-- Header / Navigation -->
@@ -202,7 +202,7 @@
             </div>
             
             <div class="flex items-center justify-between border-t border-[#FAF6F0] pt-3 mt-auto">
-              <span class="text-xs font-bold text-[#D4AF37]">${p.price || ''}</span>
+              <span class="text-xs font-bold text-[#D4AF37]">${formatPriceHTML(p.price)}</span>
               <span class="text-[9px] font-bold tracking-widest text-[#1A1A1A] group-hover:text-[#D4AF37] transition uppercase">ПОДРОБНЕЕ →</span>
             </div>
           </div>`;

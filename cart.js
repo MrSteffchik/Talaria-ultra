@@ -2,27 +2,29 @@
 let cart = JSON.parse(localStorage.getItem('talaria_cart') || '[]');
 
 // Константа стоимости доставки
-const DELIVERY_PRICE = 35000;
+const DELIVERY_PRICE = 40000;
 
 // Умная очистка размеров (убирает сердечки, стрелочки и оставляет только числа)
 function cleanSizes(sizesStr) {
   if (!sizesStr) return '';
-  const matches = sizesStr.match(/\b(3[4-9]|4[0-8])\b/g);
+  // Убираем любые эмодзи с помощью Unicode property escapes
+  let clean = sizesStr.replace(/\p{Extended_Pictographic}/gu, '').replace(/\p{Emoji_Presentation}/gu, '').trim();
+  const matches = clean.match(/\b(3[4-9]|4[0-8])\b/g);
   if (matches) {
     return [...new Set(matches)].sort().join(', ');
   }
-  return sizesStr;
+  return clean;
 }
 
 // Умная очистка названий (убирает эмодзи, мусорные реакции из Telegram)
 function cleanTitle(titleStr, descStr) {
   if (!titleStr) return 'Элегантная модель';
   
-  // Регулярное выражение для удаления эмодзи
-  let clean = titleStr.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+  // Использование Unicode Property Escapes для полного удаления эмодзи
+  let clean = titleStr.replace(/\p{Extended_Pictographic}/gu, '').replace(/\p{Emoji_Presentation}/gu, '').trim();
   
   // Убираем оставшийся мусор и знаки
-  clean = clean.replace(/^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌]+/, '').trim();
+  clean = clean.replace(/^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,]+/, '').trim();
   
   if (clean.length < 2) {
     const text = (descStr || '').toLowerCase();
@@ -33,6 +35,35 @@ function cleanTitle(titleStr, descStr) {
     return 'Женская обувь Talaria';
   }
   return clean;
+}
+
+// Умная очистка описания от эмодзи и Telegram-реакций
+function cleanDescription(descStr) {
+  if (!descStr) return '';
+  let lines = descStr.split('\n');
+  let cleanedLines = lines.map(line => {
+    // Удаляем все эмодзи
+    let cleanLine = line.replace(/\p{Extended_Pictographic}/gu, '').replace(/\p{Emoji_Presentation}/gu, '').trim();
+    // Удаляем мусорные знаки в начале строки
+    cleanLine = cleanLine.replace(/^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,\*]+/gu, '').trim();
+    return cleanLine;
+  }).filter(line => line.length > 0);
+  
+  return cleanedLines.join('\n');
+}
+
+// Форматирование цены на фронтенде с поддержкой зачеркнутой старой цены
+function formatPriceHTML(priceStr) {
+  if (!priceStr) return 'Цена по запросу';
+  
+  // Ищем старую цену в скобках, например: "450 000 сум (было: 490 000 сум)"
+  const match = priceStr.match(/(.*?)\s*\((?:было|было:)\s*(.*?)\)/i);
+  if (match) {
+    const currentPrice = match[1].trim();
+    const oldPrice = match[2].trim();
+    return `${currentPrice} <span class="line-through text-xs font-light text-[#8C847A] ml-2 opacity-70">${oldPrice}</span>`;
+  }
+  return priceStr;
 }
 
 // Динамическое внедрение HTML корзины и модального окна в DOM
@@ -71,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div id="cart-delivery-row" class="hidden flex justify-between text-[#8C847A]">
           <span>ДОСТАВКА (с примеркой):</span>
-          <span class="font-semibold text-[#1A1A1A]">35 000 сум</span>
+          <span class="font-semibold text-[#1A1A1A]">40 000 сум</span>
         </div>
         <div class="flex justify-between items-center font-semibold pt-1">
           <span class="text-[#8C847A] uppercase">ИТОГО К ОПЛАТЕ:</span>
@@ -86,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         <select id="order-delivery" onchange="handleDeliveryChange()" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none">
           <option value="pickup">Самовывоз (ул. Мирзо Улугбека, 99)</option>
-          <option value="delivery">Доставка курьером (по Ташкенту, +35 000 сум)</option>
+          <option value="delivery">Доставка курьером (по Ташкенту, +40 000 сум)</option>
         </select>
         <input type="text" id="order-address" placeholder="Адрес доставки" class="hidden w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
         
