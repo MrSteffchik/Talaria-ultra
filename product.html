@@ -115,6 +115,12 @@
           <!-- Divider -->
           <div class="h-px bg-[#E5DCD3]"></div>
 
+          <!-- Color Selector -->
+          <div id="colors-block" class="hidden space-y-3">
+            <p class="text-xs text-[#8C847A] uppercase tracking-wider font-semibold">Цвет:</p>
+            <div id="colors-container" class="flex flex-wrap gap-3 items-center"></div>
+          </div>
+
           <!-- Size Selector Section -->
           <div id="sizes-block" class="space-y-3">
             <p class="text-xs text-[#8C847A] uppercase tracking-wider font-semibold">Выберите ваш размер:</p>
@@ -167,11 +173,14 @@
     <!-- Scripts -->
     <script src="config.js"></script>
     <script src="cart.js"></script>
+    <script src="product-variants.js"></script>
     <script>
       const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
       let productData = null;
+      let productVariants = [];
       let selectedSize = null;
+      let selectedColor = null;
 
       async function loadProduct() {
         const id = new URLSearchParams(window.location.search).get('id');
@@ -196,11 +205,65 @@
           }
 
           productData = data;
+          productVariants = [data];
+          selectedColor = getProductColor(data);
+          await loadSiblingVariants(data);
           renderProduct(data);
         } catch (e) {
           console.error(e);
           showError();
         }
+      }
+
+      async function loadSiblingVariants(current) {
+        const vk = current.variant_key || getVariantKey(current);
+        if (!vk) return;
+        try {
+          const { data: siblings, error } = await _sb
+            .from('products')
+            .select('*')
+            .eq('variant_key', vk)
+            .eq('is_available', true);
+          if (!error && siblings && siblings.length) {
+            const grouped = groupCatalogProducts(siblings);
+            productVariants = grouped[0] ? grouped[0].variants : siblings;
+          }
+        } catch (e) {
+          console.warn('variants load', e);
+        }
+      }
+
+      function renderColorSelector() {
+        const block = document.getElementById('colors-block');
+        const box = document.getElementById('colors-container');
+        const unique = [];
+        for (const v of productVariants) {
+          const c = getProductColor(v);
+          if (!c) continue;
+          if (!unique.some((u) => getProductColor(u) === c)) unique.push(v);
+        }
+        if (unique.length < 2) {
+          block.classList.add('hidden');
+          return;
+        }
+        block.classList.remove('hidden');
+        box.innerHTML = unique.map((v) => {
+          const c = getProductColor(v);
+          const active = productData && productData.id === v.id;
+          return `<span class="inline-flex flex-col items-center gap-1">
+            ${colorSwatchHTML(c, active, `onclick="selectColorVariant(${v.id})"`)}
+            <span class="text-[9px] text-[#8C847A]">${c}</span>
+          </span>`;
+        }).join('');
+      }
+
+      function selectColorVariant(variantId) {
+        const v = productVariants.find((x) => x.id === variantId);
+        if (!v) return;
+        productData = v;
+        selectedColor = getProductColor(v);
+        selectedSize = null;
+        renderProduct(v);
       }
 
       function renderProduct(p) {
@@ -228,6 +291,8 @@
         // Price formatting with strikethrough support
         document.getElementById('price').innerHTML = formatPriceHTML(p.price);
         document.getElementById('title').textContent = cleanedTitle;
+
+        renderColorSelector();
 
         // Size chips selector
         const sizesContainer = document.getElementById('sizes-container');
@@ -268,7 +333,8 @@
         }
 
         // Direct Telegram Order Link
-        const text = encodeURIComponent(`Хочу заказать: ${cleanedTitle} | ${p.price || ''}`);
+        const colorPart = selectedColor ? `, цвет: ${selectedColor}` : '';
+        const text = encodeURIComponent(`Хочу заказать: ${cleanedTitle}${colorPart} | ${p.price || ''}`);
         document.getElementById('tg-order').href = `https://t.me/nalabutenahZK?text=${text}`;
 
         document.getElementById('loading').classList.add('hidden');
@@ -321,7 +387,9 @@
         const cleanedT = cleanTitle(productData.title, productData.description);
 
         // Check if already in cart
-        const existingIdx = cart.findIndex(item => item.id === productData.id && item.size === sizeLabel);
+        const colorLabel = selectedColor || getProductColor(productData) || '';
+        const existingIdx = cart.findIndex(item =>
+          item.id === productData.id && item.size === sizeLabel && (item.color || '') === colorLabel);
         if (existingIdx !== -1) {
           cart[existingIdx].quantity += 1;
         } else {
@@ -329,6 +397,7 @@
             id: productData.id,
             title: cleanedT,
             size: sizeLabel,
+            color: colorLabel,
             price: productData.price || '0 сум',
             photo: photo,
             quantity: 1

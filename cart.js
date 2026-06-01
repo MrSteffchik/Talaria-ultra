@@ -317,7 +317,7 @@ function renderCart() {
         <img src="${item.photo}" class="w-16 h-16 object-cover border border-[#E5DCD3]" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'" />
         <div class="flex-grow space-y-1">
           <h4 class="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] line-clamp-1">${cleanTitle(item.title)}</h4>
-          <p class="text-[10px] text-[#8C847A]">Размер: <span class="font-bold text-[#1A1A1A]">${item.size}</span></p>
+          <p class="text-[10px] text-[#8C847A]">Размер: <span class="font-bold text-[#1A1A1A]">${item.size}</span>${item.color ? ` · Цвет: <span class="font-bold text-[#1A1A1A]">${item.color}</span>` : ''}</p>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 border border-[#E5DCD3] px-2 py-0.5 bg-white">
               <button onclick="updateQty(${index}, -1)" class="text-xs font-bold hover:text-[#D4AF37] px-1">-</button>
@@ -470,7 +470,7 @@ function renderOrderInfoSummary() {
     const numericPrice = parseInt(String(item.price).replace(/[^0-9]/g, ''), 10) || 0;
     itemsTotal += numericPrice * item.quantity;
     return `<div class="flex justify-between gap-2 border-b border-[#FAF6F0] pb-1.5">
-      <span class="line-clamp-1 flex-1">${cleanTitle(item.title)} · ${item.size}</span>
+      <span class="line-clamp-1 flex-1">${cleanTitle(item.title)} · ${item.size}${item.color ? ` · ${item.color}` : ''}</span>
       <span class="whitespace-nowrap text-[#8C847A]">×${item.quantity}</span>
     </div>`;
   });

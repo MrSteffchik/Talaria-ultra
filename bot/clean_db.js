@@ -85,6 +85,27 @@ function cleanDescription(desc) {
     .join('\n');
 }
 
+const COLOR_PARSE = [
+  [/\b(белый|белая|белые|бел)\b/i, 'Белый'],
+  [/\b(чёрн|черн|black)\b/i, 'Чёрный'],
+  [/\b(бежев|беж)\b/i, 'Бежевый'],
+  [/\b(коричнев)\b/i, 'Коричневый'],
+  [/\b(серый|серая)\b/i, 'Серый'],
+];
+
+function parseColor(text) {
+  if (!text) return '';
+  for (const [re, label] of COLOR_PARSE) {
+    if (re.test(text)) return label;
+  }
+  return '';
+}
+
+function makeVariantKey(title, price) {
+  const t = cleanTextFully(title || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 100);
+  return `${t}|${priceAmount(price)}`;
+}
+
 function isSizeOnlyTitle(title) {
   if (!title) return false;
   const nums = extractSizeNumbers(title);
@@ -137,12 +158,17 @@ async function run() {
     }
 
     const cleanedPrice = fixPriceDisplay(originalPrice);
+    const blob = `${originalTitle} ${originalDesc}`;
+    const productColor = parseColor(blob) || p.color || null;
+    const variantKey = makeVariantKey(cleanedTitle, cleanedPrice);
 
     if (
       cleanedTitle !== originalTitle ||
       cleanedDesc !== originalDesc ||
       cleanedSizes !== originalSizes ||
-      cleanedPrice !== originalPrice
+      cleanedPrice !== originalPrice ||
+      productColor !== (p.color || null) ||
+      variantKey !== (p.variant_key || null)
     ) {
       console.log(`Обновляем товар #${id}:`);
       console.log(`  Было:  Title: "${originalTitle}" | Sizes: "${originalSizes}" | Price: "${originalPrice}"`);
@@ -157,6 +183,8 @@ async function run() {
             description: cleanedDesc || null,
             sizes: cleanedSizes || null,
             price: cleanedPrice,
+            color: productColor,
+            variant_key: variantKey,
           }),
         });
         if (!updateRes.ok) {

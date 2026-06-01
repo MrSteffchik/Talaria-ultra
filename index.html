@@ -198,6 +198,7 @@
     <!-- Scripts -->
     <script src="config.js"></script>
     <script src="cart.js"></script>
+    <script src="product-variants.js"></script>
     <script src="live-catalog.js"></script>
     <script>
       const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -209,24 +210,35 @@
         const loader = document.getElementById('featured-loading');
         
         try {
-          const { data, error } = await _sb
+          let data, error;
+          ({ data, error } = await _sb
             .from('products')
-            .select('id, title, price, photos, sizes, description')
+            .select('id, title, price, photos, sizes, description, color, variant_key')
             .eq('is_available', true)
             .order('created_at', { ascending: false })
-            .limit(FEATURED_LIMIT);
-            
+            .limit(50));
+          if (error && (error.code === '42703' || String(error.message).includes('color'))) {
+            ({ data, error } = await _sb
+              .from('products')
+              .select('id, title, price, photos, sizes, description')
+              .eq('is_available', true)
+              .order('created_at', { ascending: false })
+              .limit(50));
+          }
           if (error) throw error;
+
+          const groups = groupCatalogProducts(data || []).slice(0, FEATURED_LIMIT);
           
           loader.classList.add('hidden');
           
-          if (data && data.length > 0) {
-            grid.innerHTML = data.map(p => {
+          if (groups.length > 0) {
+            grid.innerHTML = groups.map(({ primary: p, variants }) => {
               const photo = (p.photos && p.photos.length > 0) ? p.photos[0] : 'https://via.placeholder.com/300x300?text=Нет+фото';
               
               // Используем встроенные в cart.js очистители для безопасности отображения!
               const cleanPTitle = cleanTitle(p.title, p.description);
-              const cleanPSizes = cleanSizes(p.sizes);
+              const cleanPSizes = mergeSizesForGroup(variants);
+              const dots = colorDotsHTML(variants);
               
               return `
                 <div class="product-card-lux group cursor-pointer bg-white border border-[#E5DCD3]/50 p-4" onclick="openProduct(${p.id})">
@@ -234,7 +246,8 @@
                     <img src="${photo}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'" />
                   </div>
                   <h4 class="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] truncate">${cleanPTitle}</h4>
-                  ${cleanPSizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider mb-2">Размеры: ${cleanPSizes}</p>` : ''}
+                  ${cleanPSizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider">Размеры: ${cleanPSizes}</p>` : ''}
+                  ${dots}
                   <div class="flex items-center justify-between border-t border-[#FAF6F0] pt-2.5 mt-2">
                     <span class="text-xs font-bold text-[#D4AF37]">${formatPriceHTML(p.price)}</span>
                     <span class="text-[9px] font-bold text-[#1A1A1A] uppercase group-hover:text-[#D4AF37] transition">Смотреть →</span>
@@ -259,7 +272,7 @@
       let featuredBooted = false;
       function bootFeatured() {
         if (featuredBooted) return;
-        if (typeof cleanSizes !== 'function' || typeof cleanTitle !== 'function') return;
+        if (typeof cleanSizes !== 'function' || typeof cleanTitle !== 'function' || typeof groupCatalogProducts !== 'function') return;
         featuredBooted = true;
         loadFeaturedProducts();
         bindProductLiveRefresh(_sb, loadFeaturedProducts);

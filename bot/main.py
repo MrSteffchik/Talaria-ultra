@@ -197,6 +197,38 @@ def clean_text_fully(text: str) -> str:
     clean = re.sub(r'^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,\*#]+', '', clean)
     return clean.strip()
 
+_COLOR_RULES: list[tuple[re.Pattern, str]] = [
+    (re.compile(r"\b(белый|белая|белые|бел)\b", re.I), "Белый"),
+    (re.compile(r"\b(чёрн|черн|black)\b", re.I), "Чёрный"),
+    (re.compile(r"\b(бежев|беж)\b", re.I), "Бежевый"),
+    (re.compile(r"\b(коричнев)\b", re.I), "Коричневый"),
+    (re.compile(r"\b(серый|серая|серые)\b", re.I), "Серый"),
+    (re.compile(r"\b(красн)\b", re.I), "Красный"),
+    (re.compile(r"\b(розов)\b", re.I), "Розовый"),
+    (re.compile(r"\b(синий|синяя|голуб)\b", re.I), "Синий"),
+    (re.compile(r"\b(зелен|зелён)\b", re.I), "Зелёный"),
+    (re.compile(r"\b(золот)\b", re.I), "Золотой"),
+    (re.compile(r"\b(серебр)\b", re.I), "Серебряный"),
+]
+
+
+def extract_color(text: str) -> str | None:
+    if not text:
+        return None
+    for pattern, label in _COLOR_RULES:
+        if pattern.search(text):
+            return label
+    return None
+
+
+def make_variant_key(title: str, price: str) -> str:
+    t = clean_text_fully(title or "").lower()
+    t = re.sub(r"\s+", " ", t).strip()[:100]
+    base_price = re.sub(r"\s*\(.*", "", price or "")
+    amt = price_amount(base_price) or 0
+    return f"{t}|{amt}"
+
+
 def get_fallback_title(desc: str) -> str:
     text = (desc or "").lower()
     if 'кроссовк' in text or 'кед' in text:
@@ -318,11 +350,17 @@ def parse_caption(text: str, entities=None) -> dict | None:
     if old_price and price:
         display_price = f"{price} (было: {old_price})"
 
+    color_blob = " ".join(filter(None, [text, cleaned_title, cleaned_desc]))
+    product_color = extract_color(color_blob)
+    vkey = make_variant_key(cleaned_title, display_price)
+
     return {
         "title":       cleaned_title,
         "sizes":       cleaned_sizes or None,
         "price":       display_price,
         "description": cleaned_desc or None,
+        "color":       product_color,
+        "variant_key": vkey,
     }
 
 
@@ -468,9 +506,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     parsed["telegram_media_group_id"] = media_group_id
     parsed["photos"]                  = [photo_url] if photo_url else []
 
+    # Тот же товар повторно в группе (два поста с одной подписью) — дополняем фото
+    vk = parsed.get("variant_key")
+    pcolor = parsed.get("color")
+    dup_q = supabase.table("products").select("id, photos").eq("variant_key", vk)
+    if pcolor:
+        dup_q = dup_q.eq("color", pcolor)
+    else:
+        dup_q = dup_q.is_("color", "null")
+    dup_variant = dup_q.limit(1).execute()
+    if dup_variant.data:
+        row = dup_variant.data[0]
+        photos = list(row.get("photos") or [])
+        if photo_url and photo_url not in photos:
+            photos.append(photo_url)
+            supabase.table("products").update({"photos": photos}).eq("id", row["id"]).execute()
+            log.info("Дубликат объединён с id=%s (variant_key=%s)", row["id"], vk)
+        return
+
     try:
         supabase.table("products").insert(parsed).execute()
-        log.info("Сохранён товар: %s | %s", parsed["title"], parsed["price"])
+        log.info("Сохранён товар: %s | %s | %s", parsed["title"], parsed.get("color"), parsed["price"])
     except Exception as exc:
         log.error("Ошибка сохранения товара: %s", exc)
 

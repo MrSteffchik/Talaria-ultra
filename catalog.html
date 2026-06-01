@@ -169,6 +169,7 @@
     <!-- Scripts -->
     <script src="config.js"></script>
     <script src="cart.js"></script>
+    <script src="product-variants.js"></script>
     <script src="live-catalog.js"></script>
     <script>
       const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -187,12 +188,12 @@
         return 'other';
       }
 
-      function productCard(p) {
+      function productCardGroup(group) {
+        const p = group.primary;
         const photo = (p.photos && p.photos.length > 0) ? p.photos[0] : 'https://via.placeholder.com/300x300?text=Нет+фото';
-        
-        // Используем очистители из cart.js для защиты от смайликов!
         const cleanedTitle = cleanTitle(p.title, p.description);
-        const cleanedSizes = cleanSizes(p.sizes);
+        const cleanedSizes = mergeSizesForGroup(group.variants);
+        const dots = colorDotsHTML(group.variants);
 
         return `
           <div class="product-card-lux group relative bg-white border border-[#E5DCD3]/50 p-4 flex flex-col justify-between h-full cursor-pointer" onclick="openProduct(${p.id})">
@@ -201,9 +202,9 @@
                 <img src="${photo}" alt="${cleanedTitle}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'">
               </div>
               <h3 class="text-xs font-bold tracking-wider text-[#1A1A1A] mt-4 mb-1 line-clamp-1 uppercase">${cleanedTitle}</h3>
-              ${cleanedSizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider mb-2">Размеры: ${cleanedSizes}</p>` : ''}
+              ${cleanedSizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider">Размеры: ${cleanedSizes}</p>` : ''}
+              ${dots}
             </div>
-            
             <div class="flex items-center justify-between border-t border-[#FAF6F0] pt-3 mt-auto">
               <span class="text-xs font-bold text-[#D4AF37]">${formatPriceHTML(p.price)}</span>
               <span class="text-[9px] font-bold tracking-widest text-[#1A1A1A] group-hover:text-[#D4AF37] transition uppercase">ПОДРОБНЕЕ →</span>
@@ -223,12 +224,19 @@
         empty.classList.add('hidden');
 
         try {
-          const { data, error: err } = await _sb
+          let data, err;
+          ({ data, error: err } = await _sb
             .from('products')
-            .select('id, title, sizes, price, photos, description')
+            .select('id, title, sizes, price, photos, description, color, variant_key')
             .eq('is_available', true)
-            .order('created_at', { ascending: false });
-
+            .order('created_at', { ascending: false }));
+          if (err && (err.code === '42703' || String(err.message).includes('color'))) {
+            ({ data, error: err } = await _sb
+              .from('products')
+              .select('id, title, sizes, price, photos, description')
+              .eq('is_available', true)
+              .order('created_at', { ascending: false }));
+          }
           if (err) throw err;
 
           allProducts = data || [];
@@ -327,7 +335,8 @@
           empty.classList.remove('hidden');
         } else {
           empty.classList.add('hidden');
-          grid.innerHTML = filtered.map(productCard).join('');
+          const groups = groupCatalogProducts(filtered);
+          grid.innerHTML = groups.map(productCardGroup).join('');
           grid.classList.remove('hidden');
         }
       }
@@ -339,7 +348,7 @@
       let catalogBooted = false;
       function bootCatalog() {
         if (catalogBooted) return;
-        if (typeof cleanSizes !== 'function' || typeof formatPriceHTML !== 'function') return;
+        if (typeof cleanSizes !== 'function' || typeof formatPriceHTML !== 'function' || typeof groupCatalogProducts !== 'function') return;
         catalogBooted = true;
         loadProducts();
         bindProductLiveRefresh(_sb, loadProducts);

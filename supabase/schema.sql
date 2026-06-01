@@ -8,6 +8,8 @@ CREATE TABLE products (
   description             TEXT,
   price                   TEXT,
   photos                  TEXT[] DEFAULT '{}',
+  color                   TEXT,
+  variant_key             TEXT,
   is_available            BOOLEAN DEFAULT true,
   created_at              TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
