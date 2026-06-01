@@ -167,6 +167,7 @@
 
     <!-- Scripts -->
     <script src="config.js"></script>
+    <script src="cart.js"></script>
     <script>
       const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
       
@@ -235,6 +236,12 @@
         } catch (e) {
           console.error(e);
           loading.classList.add('hidden');
+          const errLabel = error.querySelector('p');
+          if (errLabel) {
+            errLabel.textContent = (e?.code || e?.details)
+              ? 'Ошибка соединения с базой'
+              : 'Ошибка загрузки каталога. Обновите страницу.';
+          }
           error.classList.remove('hidden');
         }
       }
@@ -327,8 +334,15 @@
         window.location.href = `product.html?id=${id}`;
       }
 
-      loadProducts();
+      let catalogBooted = false;
+      function bootCatalog() {
+        if (catalogBooted) return;
+        if (typeof cleanSizes !== 'function' || typeof formatPriceHTML !== 'function') return;
+        catalogBooted = true;
+        loadProducts();
+      }
+      bootCatalog();
+      window.addEventListener('load', bootCatalog);
     </script>
-    <script src="cart.js"></script>
   </body>
 </html>

@@ -55,19 +55,40 @@ def extract_strikethrough(text: str, entities) -> set[tuple[int,int]]:
     return ranges
 
 
-def is_strikethrough(line: str, text: str, strike_ranges: set) -> bool:
-    """Проверяет, является ли строка полностью зачёркнутой."""
+def is_strikethrough(line_start: int, line_end: int, strike_ranges: set) -> bool:
+    """Строка зачёркнута, если диапазон entity пересекается с текстом строки."""
     if not strike_ranges:
         return False
-    try:
-        start = text.index(line)
-        end = start + len(line)
-        for (s, e) in strike_ranges:
-            if s <= start and end <= e:
-                return True
-    except ValueError:
-        pass
+    for (s, e) in strike_ranges:
+        if s < line_end and e > line_start:
+            return True
     return False
+
+
+def price_amount(text: str) -> int | None:
+    if not text:
+        return None
+    digits = re.sub(r"\D", "", text)
+    return int(digits) if digits else None
+
+
+def normalize_price_line(line: str) -> str:
+    clean = clean_emoji(line).strip()
+    clean = re.sub(
+        r"^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)",
+        "",
+        clean,
+        flags=re.IGNORECASE,
+    ).strip()
+    return clean
+
+
+def extract_size_numbers(text: str) -> list[str]:
+    if not text:
+        return []
+    stripped = re.sub(r"[^\d,\s\-\.]", "", clean_emoji(text))
+    found = re.findall(r"\b(3[4-9]|4[0-9]|5[0-2])\b", stripped)
+    return sorted(set(found))
 
 
 def clean_emoji(text: str) -> str:
@@ -124,17 +145,24 @@ def parse_caption(text: str, entities=None) -> dict | None:
     old_price = None
     desc_lines: list[str] = []
 
+    search_from = 0
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if not line:
             continue
+        line_start = text.find(line, search_from)
+        if line_start < 0:
+            line_start = search_from
+        line_end = line_start + len(line)
+        search_from = line_end
+
         if _SKIP_RE.search(line):
             continue
         if _PHONE_RE.match(line) or _ORDER_RE.search(line):
             continue
 
         # Зачёркнутая строка с ценой = старая цена
-        if _PRICE_RE.search(line) and is_strikethrough(line, text, strike_ranges):
+        if _PRICE_RE.search(line) and is_strikethrough(line_start, line_end, strike_ranges):
             old_price = line
             continue
 
@@ -143,10 +171,18 @@ def parse_caption(text: str, entities=None) -> dict | None:
             price = line
             continue
 
-        # Строка только из цифр (размеры) или содержит ➡️
-        if _ARROW_RE.search(line) or (_SIZE_NUM.search(line) and _SIZE_ONLY.match(_ARROW_RE.sub("", line).replace(",", " ").strip())):
-            cleaned = _ARROW_RE.sub("", line).strip()
-            sizes_parts.append(cleaned)
+        size_nums = extract_size_numbers(line)
+        size_probe = _ARROW_RE.sub("", line).replace(",", " ").strip()
+        # Размеры: цифры 35–52, допускаем Premium-эмодзи (вырезаются в extract_size_numbers)
+        if _ARROW_RE.search(line) or (
+            size_nums
+            and (
+                _SIZE_ONLY.match(size_probe)
+                or len(size_nums) >= 2
+                or (len(size_nums) == 1 and not _PRICE_RE.search(line))
+            )
+        ):
+            sizes_parts.append(", ".join(size_nums) if size_nums else _ARROW_RE.sub("", line).strip())
             continue
 
         if title is None:
@@ -166,28 +202,40 @@ def parse_caption(text: str, entities=None) -> dict | None:
     raw_sizes = ", ".join(sizes_parts) if sizes_parts else None
     cleaned_sizes = ""
     if raw_sizes:
-        sizes_clean = clean_emoji(raw_sizes)
-        found = re.findall(r'\b(3[4-9]|4[0-8])\b', sizes_clean)
+        found = extract_size_numbers(raw_sizes)
         if found:
-            cleaned_sizes = ", ".join(sorted(list(set(found))))
-            
+            cleaned_sizes = ", ".join(found)
+
     # Если размеры не найдены, пробуем вытащить их из описания
     if not cleaned_sizes and cleaned_desc:
-        found_sizes = re.findall(r'\b(3[5-9]|4[0-6])\b', cleaned_desc)
+        found_sizes = extract_size_numbers(cleaned_desc)
         if found_sizes:
-            cleaned_sizes = ", ".join(sorted(list(set(found_sizes))))
+            cleaned_sizes = ", ".join(found_sizes)
+
+    # Заголовок ошибочно стал строкой размеров (43,44 и т.п.)
+    if cleaned_title and extract_size_numbers(cleaned_title) and re.match(
+        r"^[\d\s,\.\-]+$", cleaned_title.replace(" ", "")
+    ):
+        if not cleaned_sizes:
+            cleaned_sizes = ", ".join(extract_size_numbers(cleaned_title))
+        cleaned_title = get_fallback_title(cleaned_desc)
 
     # Если заголовок пустой или мусорный, даем красивый фолбек
     if len(cleaned_title) < 2:
         cleaned_title = get_fallback_title(cleaned_desc)
 
-    # Показываем цену красиво: если есть скидка
+    # Нормализуем цены; если текущая выше старой — меняем местами
+    if price:
+        price = normalize_price_line(price)
+    if old_price:
+        old_price = normalize_price_line(old_price)
+    p_amt, o_amt = price_amount(price or ""), price_amount(old_price or "")
+    if p_amt and o_amt and p_amt > o_amt:
+        price, old_price = old_price, price
+
     display_price = price or ""
-    display_price = clean_emoji(display_price)
-    
     if old_price and price:
-        old_price_clean = clean_emoji(old_price)
-        display_price = f"{display_price} (было: {old_price_clean})"
+        display_price = f"{price} (было: {old_price})"
 
     return {
         "title":       cleaned_title,
@@ -269,8 +317,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     parsed["telegram_media_group_id"] = media_group_id
     parsed["photos"]                  = [photo_url] if photo_url else []
 
-    supabase.table("products").insert(parsed).execute()
-    log.info("Сохранён товар: %s | %s", parsed["title"], parsed["price"])
+    try:
+        supabase.table("products").insert(parsed).execute()
+        log.info("Сохранён товар: %s | %s", parsed["title"], parsed["price"])
+    except Exception as exc:
+        log.error("Ошибка сохранения товара: %s", exc)
 
 
 # ─── Мониторинг заказов ────────────────────────────────────────────────────────

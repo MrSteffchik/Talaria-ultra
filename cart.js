@@ -4,27 +4,34 @@ let cart = JSON.parse(localStorage.getItem('talaria_cart') || '[]');
 // Константа стоимости доставки
 const DELIVERY_PRICE = 40000;
 
+// Совместимая очистка эмодзи (без \\p{}, чтобы cart.js работал в старых WebView)
+function stripEmoji(text) {
+  if (!text) return '';
+  return text
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+    .replace(/[\u2000-\u3300\u2600-\u27BF]/g, '')
+    .trim();
+}
+
+const LEADING_JUNK_RE = /^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s•:.,*#]+/;
+
 // Умная очистка размеров (убирает сердечки, стрелочки и оставляет только числа)
 function cleanSizes(sizesStr) {
   if (!sizesStr) return '';
-  // Убираем любые эмодзи с помощью Unicode property escapes
-  let clean = sizesStr.replace(/\p{Extended_Pictographic}/gu, '').replace(/\p{Emoji_Presentation}/gu, '').trim();
-  const matches = clean.match(/\b(3[4-9]|4[0-8])\b/g);
+  const stripped = stripEmoji(String(sizesStr)).replace(/[^\d,\s\-.]/g, '');
+  const matches = stripped.match(/\b(3[4-9]|4[0-9]|5[0-2])\b/g);
   if (matches) {
     return [...new Set(matches)].sort().join(', ');
   }
-  return clean;
+  return '';
 }
 
 // Умная очистка названий (убирает эмодзи, мусорные реакции из Telegram)
 function cleanTitle(titleStr, descStr) {
   if (!titleStr) return 'Элегантная модель';
-  
-  // Использование Unicode Property Escapes для полного удаления эмодзи
-  let clean = titleStr.replace(/\p{Extended_Pictographic}/gu, '').replace(/\p{Emoji_Presentation}/gu, '').trim();
-  
-  // Убираем оставшийся мусор и знаки
-  clean = clean.replace(/^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,]+/, '').trim();
+
+  let clean = stripEmoji(titleStr);
+  clean = clean.replace(LEADING_JUNK_RE, '').trim();
   
   if (clean.length < 2) {
     const text = (descStr || '').toLowerCase();
@@ -42,10 +49,7 @@ function cleanDescription(descStr) {
   if (!descStr) return '';
   let lines = descStr.split('\n');
   let cleanedLines = lines.map(line => {
-    // Удаляем все эмодзи
-    let cleanLine = line.replace(/\p{Extended_Pictographic}/gu, '').replace(/\p{Emoji_Presentation}/gu, '').trim();
-    // Удаляем мусорные знаки в начале строки
-    cleanLine = cleanLine.replace(/^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,\*]+/gu, '').trim();
+    let cleanLine = stripEmoji(line).replace(LEADING_JUNK_RE, '').trim();
     return cleanLine;
   }).filter(line => line.length > 0);
   
@@ -59,8 +63,12 @@ function formatPriceHTML(priceStr) {
   // Ищем старую цену в скобках, например: "450 000 сум (было: 490 000 сум)"
   const match = priceStr.match(/(.*?)\s*\((?:было|было:)\s*(.*?)\)/i);
   if (match) {
-    const currentPrice = match[1].trim();
-    const oldPrice = match[2].trim();
+    let currentPrice = match[1].trim();
+    let oldPrice = match[2].trim();
+    const priceAmount = (s) => parseInt((s.match(/\d+/g) || []).join(''), 10) || 0;
+    if (priceAmount(currentPrice) > priceAmount(oldPrice) && priceAmount(oldPrice) > 0) {
+      [currentPrice, oldPrice] = [oldPrice, currentPrice];
+    }
     return `${currentPrice} <span class="line-through text-xs font-light text-[#8C847A] ml-2 opacity-70">${oldPrice}</span>`;
   }
   return priceStr;

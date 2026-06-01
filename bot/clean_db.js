@@ -1,11 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 
-// Читаем .env файл вручную
+const DRY_RUN = process.argv.includes('--dry-run');
+
 const envPath = path.join(__dirname, '.env');
 const envContent = fs.readFileSync(envPath, 'utf8');
 const env = {};
-envContent.split('\n').forEach(line => {
+envContent.split('\n').forEach((line) => {
   const match = line.match(/^\s*([\w.\-]+)\s*=\s*(.*)?\s*$/);
   if (match) {
     let value = match[2] || '';
@@ -15,54 +16,59 @@ envContent.split('\n').forEach(line => {
   }
 });
 
-const SUPABASE_URL = env['SUPABASE_URL'];
-const SUPABASE_KEY = env['SUPABASE_SERVICE_KEY'];
+const SUPABASE_URL = env.SUPABASE_URL;
+const SUPABASE_KEY = env.SUPABASE_SERVICE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Ошибка: не удалось прочитать SUPABASE_URL или SUPABASE_SERVICE_KEY из .env");
+  console.error('Ошибка: не удалось прочитать SUPABASE_URL или SUPABASE_SERVICE_KEY из .env');
   process.exit(1);
 }
 
-// Умная очистка от эмодзи и Telegram Premium реакций с помощью регулярных выражений Unicode
 function cleanEmoji(text) {
   if (!text) return '';
-  // Удаляем все эмодзи с помощью Unicode Property Escapes
-  let clean = text.replace(/\p{Extended_Pictographic}/gu, '').replace(/\p{Emoji_Presentation}/gu, '').trim();
-  // Дополнительно вычищаем значки и стрелки
-  clean = clean.replace(/[\u2000-\u3300\u2600-\u27bf]/g, '').trim();
-  return clean;
+  return text
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+    .replace(/[\u2000-\u3300\u2600-\u27BF]/g, '')
+    .trim();
 }
 
 function cleanTextFully(text) {
   const clean = cleanEmoji(text);
-  // Убираем оставшийся мусор в начале
-  return clean.replace(/^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,\*#]+/, '').trim();
+  return clean.replace(/^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s•:.,*#]+/, '').trim();
+}
+
+function extractSizeNumbers(text) {
+  if (!text) return [];
+  const stripped = cleanEmoji(text).replace(/[^\d,\s\-.]/g, '');
+  const found = stripped.match(/\b(3[4-9]|4[0-9]|5[0-2])\b/g) || [];
+  return [...new Set(found)].sort();
 }
 
 function cleanSizes(sizesStr) {
-  if (!sizesStr) return '';
-  const clean = cleanEmoji(sizesStr);
-  const matches = clean.match(/\b(3[4-9]|4[0-8])\b/g);
-  if (matches) {
-    return [...new Set(matches)].sort().join(', ');
-  }
-  return clean;
+  const found = extractSizeNumbers(sizesStr || '');
+  return found.length ? found.join(', ') : '';
 }
 
-function cleanDescription(desc) {
-  if (!desc) return '';
-  const lines = desc.split('\n');
-  const cleanedLines = lines.map(line => {
-    let cleanLine = cleanEmoji(line);
-    cleanLine = cleanLine.replace(/^[👌👍😁😀😊😂🎉🔥✨🌟💎👑🖤❤️✊🎨⭐⏳✅❌\-\s\•\:\.\,\*]+/, '').trim();
-    return cleanLine;
-  }).filter(line => line.length > 0);
-  
-  return cleanedLines.join('\n');
+function priceAmount(text) {
+  const digits = (text || '').replace(/\D/g, '');
+  return digits ? parseInt(digits, 10) : 0;
+}
+
+function fixPriceDisplay(priceStr) {
+  if (!priceStr) return '';
+  const clean = cleanEmoji(priceStr).trim();
+  const m = clean.match(/(.*?)\s*\((?:было|было:)\s*(.*?)\)\s*$/i);
+  if (!m) return clean;
+  let current = m[1].trim().replace(/^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)/i, '').trim();
+  let old = m[2].trim().replace(/^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)/i, '').trim();
+  if (priceAmount(current) > priceAmount(old) && priceAmount(old) > 0) {
+    [current, old] = [old, current];
+  }
+  return `${current} (было: ${old})`;
 }
 
 function getFallbackTitle(desc) {
-  const text = (desc || "").toLowerCase();
+  const text = (desc || '').toLowerCase();
   if (text.includes('кроссовк') || text.includes('кед')) return 'Стильные кроссовки';
   if (text.includes('туфли') || text.includes('каблук')) return 'Элегантные туфли';
   if (text.includes('босонож') || text.includes('сандал')) return 'Премиальные босоножки';
@@ -70,88 +76,103 @@ function getFallbackTitle(desc) {
   return 'Женская обувь Talaria';
 }
 
-async function run() {
-  console.log("Получаем список всех товаров...");
-  const headers = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${SUPABASE_KEY}`
-  };
-
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*`, { headers });
-    if (!res.ok) {
-      throw new Error(`Ошибка загрузки: ${res.statusText} (${res.status})`);
-    }
-    const products = await res.json();
-    console.log(`Успешно получено товаров: ${products.length}`);
-
-    let updatedCount = 0;
-
-    for (const p of products) {
-      const id = p.id;
-      const originalTitle = p.title || '';
-      const originalDesc = p.description || '';
-      const originalSizes = p.sizes || '';
-      const originalPrice = p.price || '';
-
-      // Чистим поля
-      let cleanedTitle = cleanTextFully(originalTitle);
-      let cleanedDesc = cleanDescription(originalDesc);
-      let cleanedSizes = cleanSizes(originalSizes);
-
-      // Умный поиск размеров в описании, если они пусты
-      if (!cleanedSizes && originalDesc) {
-        const found = originalDesc.match(/\b(3[5-9]|4[0-6])\b/g);
-        if (found) {
-          cleanedSizes = [...new Set(found)].sort().join(', ');
-        }
-      }
-
-      // Название фолбек, если стало пустым
-      if (cleanedTitle.length < 2) {
-        cleanedTitle = getFallbackTitle(cleanedDesc);
-      }
-
-      // Чистим цену
-      const cleanedPrice = cleanEmoji(originalPrice).trim();
-
-      // Проверяем изменения
-      if (
-        cleanedTitle !== originalTitle ||
-        cleanedDesc !== originalDesc ||
-        cleanedSizes !== originalSizes ||
-        cleanedPrice !== originalPrice
-      ) {
-        console.log(`Обновляем товар #${id}:`);
-        console.log(`  Было:  Title: "${originalTitle}" | Sizes: "${originalSizes}"`);
-        console.log(`  Стало: Title: "${cleanedTitle}" | Sizes: "${cleanedSizes}"`);
-
-        const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
-          method: 'PATCH',
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            title: cleanedTitle,
-            description: cleanedDesc,
-            sizes: cleanedSizes,
-            price: cleanedPrice
-          })
-        });
-
-        if (!updateRes.ok) {
-          console.error(`Ошибка при обновлении #${id}:`, updateRes.statusText);
-        } else {
-          updatedCount++;
-        }
-      }
-    }
-
-    console.log(`\nУспешно очищено и обновлено товаров в базе данных Supabase: ${updatedCount}`);
-  } catch (err) {
-    console.error("Произошла критическая ошибка:", err);
-  }
+function cleanDescription(desc) {
+  if (!desc) return '';
+  return desc
+    .split('\n')
+    .map((line) => cleanTextFully(line))
+    .filter((line) => line.length > 0)
+    .join('\n');
 }
 
-run();
+function isSizeOnlyTitle(title) {
+  if (!title) return false;
+  const nums = extractSizeNumbers(title);
+  if (!nums.length) return false;
+  return /^[\d\s,.\-]+$/.test(title.replace(/\s/g, ''));
+}
+
+async function run() {
+  console.log('Получаем список всех товаров...');
+  if (DRY_RUN) console.log('Режим dry-run: в БД ничего не записываем.\n');
+
+  const headers = {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+  };
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*`, { headers });
+  if (!res.ok) {
+    throw new Error(`Ошибка загрузки: ${res.statusText} (${res.status})`);
+  }
+
+  const products = await res.json();
+  console.log(`Найдено товаров: ${products.length}`);
+
+  let updatedCount = 0;
+
+  for (const p of products) {
+    const id = p.id;
+    const originalTitle = p.title || '';
+    const originalDesc = p.description || '';
+    const originalSizes = p.sizes || '';
+    const originalPrice = p.price || '';
+
+    let cleanedTitle = cleanTextFully(originalTitle);
+    let cleanedDesc = cleanDescription(originalDesc);
+    let cleanedSizes = cleanSizes(originalSizes);
+
+    if (!cleanedSizes && originalDesc) {
+      const found = extractSizeNumbers(originalDesc);
+      if (found.length) cleanedSizes = found.join(', ');
+    }
+
+    if (isSizeOnlyTitle(cleanedTitle)) {
+      if (!cleanedSizes) cleanedSizes = extractSizeNumbers(cleanedTitle).join(', ');
+      cleanedTitle = getFallbackTitle(cleanedDesc);
+    }
+
+    if (cleanedTitle.length < 2) {
+      cleanedTitle = getFallbackTitle(cleanedDesc);
+    }
+
+    const cleanedPrice = fixPriceDisplay(originalPrice);
+
+    if (
+      cleanedTitle !== originalTitle ||
+      cleanedDesc !== originalDesc ||
+      cleanedSizes !== originalSizes ||
+      cleanedPrice !== originalPrice
+    ) {
+      console.log(`Обновляем товар #${id}:`);
+      console.log(`  Было:  Title: "${originalTitle}" | Sizes: "${originalSizes}" | Price: "${originalPrice}"`);
+      console.log(`  Стало: Title: "${cleanedTitle}" | Sizes: "${cleanedSizes}" | Price: "${cleanedPrice}"`);
+
+      if (!DRY_RUN) {
+        const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            title: cleanedTitle,
+            description: cleanedDesc || null,
+            sizes: cleanedSizes || null,
+            price: cleanedPrice,
+          }),
+        });
+        if (!updateRes.ok) {
+          console.error(`Ошибка при обновлении #${id}:`, updateRes.statusText);
+          continue;
+        }
+      }
+      updatedCount++;
+    }
+  }
+
+  const action = DRY_RUN ? 'будет обновлено' : 'обновлено';
+  console.log(`\nГотово! ${action} товаров: ${updatedCount}`);
+}
+
+run().catch((err) => {
+  console.error('Произошла критическая ошибка:', err);
+  process.exit(1);
+});
