@@ -54,9 +54,11 @@ def fix_price_display(price_str: str) -> str:
     current = re.sub(
         r"^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)", "", current, flags=re.IGNORECASE
     ).strip()
+    current = re.sub(r"^:\s*", "", current).strip()
     old = re.sub(
         r"^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)", "", old, flags=re.IGNORECASE
     ).strip()
+    old = re.sub(r"^:\s*", "", old).strip()
     if price_amount(current) > price_amount(old) and price_amount(old) > 0:
         current, old = old, current
     return f"{current} (было: {old})"

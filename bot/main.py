@@ -80,7 +80,7 @@ def normalize_price_line(line: str) -> str:
         clean,
         flags=re.IGNORECASE,
     ).strip()
-    return clean
+    return re.sub(r"^:\s*", "", clean).strip()
 
 
 def extract_size_numbers(text: str) -> list[str]:

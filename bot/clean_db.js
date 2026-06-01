@@ -59,8 +59,8 @@ function fixPriceDisplay(priceStr) {
   const clean = cleanEmoji(priceStr).trim();
   const m = clean.match(/(.*?)\s*\((?:было|было:)\s*(.*?)\)\s*$/i);
   if (!m) return clean;
-  let current = m[1].trim().replace(/^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)/i, '').trim();
-  let old = m[2].trim().replace(/^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)/i, '').trim();
+  let current = m[1].trim().replace(/^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)/i, '').replace(/^:\s*/, '').trim();
+  let old = m[2].trim().replace(/^(?:цена\s*(?:со\s*скидкой)?\s*:?\s*)/i, '').replace(/^:\s*/, '').trim();
   if (priceAmount(current) > priceAmount(old) && priceAmount(old) > 0) {
     [current, old] = [old, current];
   }
