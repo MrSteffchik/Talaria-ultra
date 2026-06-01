@@ -44,9 +44,17 @@ _ORDER_RE  = re.compile(r"(заказ|@\w+)", re.IGNORECASE)
 _REVIEW_RE = re.compile(r"#отзыв|отзывклиент", re.IGNORECASE)
 
 
-def extract_strikethrough(text: str, entities) -> set[tuple[int,int]]:
-    """Возвращает множество (start, end) зачёркнутых фрагментов."""
-    ranges = set()
+def _utf16_units_before(text: str, py_index: int) -> int:
+    """Сколько UTF-16 code units в text[:py_index] (как в Telegram entities)."""
+    units = 0
+    for ch in text[:py_index]:
+        units += 2 if ord(ch) > 0xFFFF else 1
+    return units
+
+
+def extract_strikethrough(text: str, entities) -> set[tuple[int, int]]:
+    """Диапазоны зачёркивания в UTF-16 offsets (как отдаёт Telegram API)."""
+    ranges: set[tuple[int, int]] = set()
     if not entities:
         return ranges
     for e in entities:
@@ -55,12 +63,16 @@ def extract_strikethrough(text: str, entities) -> set[tuple[int,int]]:
     return ranges
 
 
-def is_strikethrough(line_start: int, line_end: int, strike_ranges: set) -> bool:
-    """Строка зачёркнута, если диапазон entity пересекается с текстом строки."""
+def is_strikethrough_line(
+    text: str, line_start_py: int, line_end_py: int, strike_ranges: set
+) -> bool:
+    """Строка зачёркнута, если entity strikethrough пересекает её (UTF-16 offsets)."""
     if not strike_ranges:
         return False
-    for (s, e) in strike_ranges:
-        if s < line_end and e > line_start:
+    line_u16_start = _utf16_units_before(text, line_start_py)
+    line_u16_end = _utf16_units_before(text, line_end_py)
+    for s, e in strike_ranges:
+        if s < line_u16_end and e > line_u16_start:
             return True
     return False
 
@@ -86,19 +98,98 @@ def normalize_price_line(line: str) -> str:
 def extract_size_numbers(text: str) -> list[str]:
     if not text:
         return []
-    stripped = re.sub(r"[^\d,\s\-\.]", "", clean_emoji(text))
+    stripped = re.sub(r"[^\d,\s\-\.]", "", strip_all_emoji(text))
     found = re.findall(r"\b(3[4-9]|4[0-9]|5[0-2])\b", stripped)
     return sorted(set(found))
 
 
-def clean_emoji(text: str) -> str:
+def strip_all_emoji(text: str) -> str:
+    """Удаляет обычные и Premium/custom emoji, оставляя буквы, цифры, пунктуацию."""
     if not text:
         return ""
-    # Удаляем 4-байтовые символы эмодзи (диапазоны суррогатных пар и высших плоскостей)
-    clean = re.sub(r'[\U00010000-\U0010ffff]', '', text)
-    # Удаляем графические символы, стрелки, сердечки и значки
-    clean = re.sub(r'[\u2000-\u3300\u2600-\u27bf]', '', clean)
+    clean = text
+    # Суррогатные пары (большинство emoji, в т.ч. многие custom)
+    clean = re.sub(r"[\uD800-\uDBFF][\uDC00-\uDFFF]", "", clean)
+    # Дополнительные плоскости Unicode
+    clean = re.sub(r"[\U00010000-\U0010ffff]", "", clean)
+    # Символы, стрелки, dingbats, variation selectors, ZWJ
+    clean = re.sub(r"[\u2000-\u3300\u2600-\u27BF\uFE00-\uFE0F\u200D]", "", clean)
     return clean.strip()
+
+
+def clean_emoji(text: str) -> str:
+    return strip_all_emoji(text)
+
+
+_DISCOUNT_PRICE_RE = re.compile(r"скидк", re.IGNORECASE)
+
+
+def resolve_prices(
+    candidates: list[tuple[str, bool, bool]],
+) -> tuple[str | None, str | None]:
+    """
+    candidates: (raw_line, is_strikethrough, has_discount_keyword)
+    Возвращает (текущая_цена, старая_цена).
+    """
+    if not candidates:
+        return None, None
+
+    parsed: list[tuple[str, int, bool, bool]] = []
+    for line, struck, discount_kw in candidates:
+        amt = price_amount(line)
+        if amt is None:
+            continue
+        parsed.append((line, amt, struck, discount_kw))
+
+    if not parsed:
+        return normalize_price_line(candidates[0][0]), None
+
+    strike_items = [p for p in parsed if p[2]]
+    regular_items = [p for p in parsed if not p[2]]
+
+    current: str | None = None
+    old: str | None = None
+
+    if strike_items and regular_items:
+        # Зачёркнутая = старая, обычная = актуальная
+        old = normalize_price_line(max(strike_items, key=lambda x: x[1])[0])
+        regular_sorted = sorted(regular_items, key=lambda x: x[1])
+        # При нескольких обычных — приоритет строке «со скидкой», иначе меньшая сумма (актуальная)
+        discount_regular = [p for p in regular_items if p[3]]
+        if discount_regular:
+            current = normalize_price_line(min(discount_regular, key=lambda x: x[1])[0])
+        else:
+            current = normalize_price_line(regular_sorted[0][0])
+        # Если «старая» из strike меньше актуальной — поменять (битый entity)
+        if price_amount(old) and price_amount(current) and price_amount(old) < price_amount(current):
+            current, old = old, current
+    elif len(parsed) == 1:
+        line, amt, struck, discount_kw = parsed[0]
+        norm = normalize_price_line(line)
+        if struck and not discount_kw:
+            return None, norm
+        return norm, None
+    else:
+        # Несколько цен без надёжного strikethrough: меньшая = актуальная (скидка)
+        parsed_sorted = sorted(parsed, key=lambda x: x[1])
+        discount_items = [p for p in parsed if p[3]]
+        if discount_items:
+            best = min(discount_items, key=lambda x: x[1])
+            current = normalize_price_line(best[0])
+            others = [p for p in parsed if p != best]
+            if others:
+                old = normalize_price_line(max(others, key=lambda x: x[1])[0])
+        elif len(parsed_sorted) >= 2:
+            current = normalize_price_line(parsed_sorted[0][0])
+            old = normalize_price_line(parsed_sorted[-1][0])
+        else:
+            current = normalize_price_line(parsed_sorted[0][0])
+
+    if current and old and price_amount(current) and price_amount(old):
+        if price_amount(current) > price_amount(old):
+            current, old = old, current
+
+    return current, old
 
 def clean_text_fully(text: str) -> str:
     clean = clean_emoji(text)
@@ -141,8 +232,7 @@ def parse_caption(text: str, entities=None) -> dict | None:
 
     title = None
     sizes_parts: list[str] = []
-    price = None
-    old_price = None
+    price_candidates: list[tuple[str, bool, bool]] = []
     desc_lines: list[str] = []
 
     search_from = 0
@@ -161,19 +251,16 @@ def parse_caption(text: str, entities=None) -> dict | None:
         if _PHONE_RE.match(line) or _ORDER_RE.search(line):
             continue
 
-        # Зачёркнутая строка с ценой = старая цена
-        if _PRICE_RE.search(line) and is_strikethrough(line_start, line_end, strike_ranges):
-            old_price = line
-            continue
-
-        # Обычная строка с ценой = текущая цена
         if _PRICE_RE.search(line):
-            price = line
+            struck = is_strikethrough_line(text, line_start, line_end, strike_ranges)
+            discount_kw = bool(_DISCOUNT_PRICE_RE.search(line))
+            price_candidates.append((line, struck, discount_kw))
             continue
 
-        size_nums = extract_size_numbers(line)
-        size_probe = _ARROW_RE.sub("", line).replace(",", " ").strip()
-        # Размеры: цифры 35–52, допускаем Premium-эмодзи (вырезаются в extract_size_numbers)
+        # Размеры: сначала полностью убираем emoji (включая Premium), потом только цифры 34–52
+        line_for_sizes = strip_all_emoji(line)
+        size_probe = _ARROW_RE.sub("", line_for_sizes).replace(",", " ").strip()
+        size_nums = extract_size_numbers(line_for_sizes)
         if _ARROW_RE.search(line) or (
             size_nums
             and (
@@ -182,7 +269,8 @@ def parse_caption(text: str, entities=None) -> dict | None:
                 or (len(size_nums) == 1 and not _PRICE_RE.search(line))
             )
         ):
-            sizes_parts.append(", ".join(size_nums) if size_nums else _ARROW_RE.sub("", line).strip())
+            if size_nums:
+                sizes_parts.append(", ".join(size_nums))
             continue
 
         if title is None:
@@ -190,7 +278,9 @@ def parse_caption(text: str, entities=None) -> dict | None:
         else:
             desc_lines.append(line)
 
-    # Без цены — не товар
+    price, old_price = resolve_prices(price_candidates)
+
+    # Без актуальной цены — не товар
     if not price:
         return None
 
@@ -223,15 +313,6 @@ def parse_caption(text: str, entities=None) -> dict | None:
     # Если заголовок пустой или мусорный, даем красивый фолбек
     if len(cleaned_title) < 2:
         cleaned_title = get_fallback_title(cleaned_desc)
-
-    # Нормализуем цены; если текущая выше старой — меняем местами
-    if price:
-        price = normalize_price_line(price)
-    if old_price:
-        old_price = normalize_price_line(old_price)
-    p_amt, o_amt = price_amount(price or ""), price_amount(old_price or "")
-    if p_amt and o_amt and p_amt > o_amt:
-        price, old_price = old_price, price
 
     display_price = price or ""
     if old_price and price:

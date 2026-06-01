@@ -61,10 +61,10 @@ function formatPriceHTML(priceStr) {
   if (!priceStr) return 'Цена по запросу';
   
   // Ищем старую цену в скобках, например: "450 000 сум (было: 490 000 сум)"
-  const match = priceStr.match(/(.*?)\s*\((?:было|было:)\s*(.*?)\)/i);
+  const match = priceStr.match(/(.*?)\s*\((?:было:\s*|было\s+)(.*?)\)\s*$/i);
   if (match) {
     let currentPrice = match[1].trim();
-    let oldPrice = match[2].trim();
+    let oldPrice = match[2].trim().replace(/^:\s*/, '');
     const priceAmount = (s) => parseInt((s.match(/\d+/g) || []).join(''), 10) || 0;
     if (priceAmount(currentPrice) > priceAmount(oldPrice) && priceAmount(oldPrice) > 0) {
       [currentPrice, oldPrice] = [oldPrice, currentPrice];
