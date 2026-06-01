@@ -1,8 +1,21 @@
 // Модуль корзины и оформления заказов для Talaria
 let cart = JSON.parse(localStorage.getItem('talaria_cart') || '[]');
 
-// Константа стоимости доставки
-const DELIVERY_PRICE = 40000;
+function getDeliveryConfig() {
+  const d = (typeof CONFIG !== 'undefined' && CONFIG.DELIVERY) ? CONFIG.DELIVERY : {};
+  return {
+    pickupAddress: d.pickupAddress || 'Ташкент, ул. Мирзо Улугбека, 99',
+    pickupHours: d.pickupHours || 'Пн–Сб 9:00–20:00, Вс 10:00–18:00',
+    pickupPhone: d.pickupPhone || '+998 90 825-73-37',
+    courierPrice: d.courierPrice ?? 40000,
+    courierTitle: d.courierTitle || 'Курьер по Ташкенту с примеркой',
+    courierDescription: d.courierDescription || 'Привезём до 3 пар на выбор. Примерьте дома и оставьте подходящее.',
+  };
+}
+
+function getDeliveryPrice() {
+  return getDeliveryConfig().courierPrice;
+}
 
 // Совместимая очистка эмодзи (без \\p{}, чтобы cart.js работал в старых WebView)
 function stripEmoji(text) {
@@ -98,11 +111,59 @@ document.addEventListener("DOMContentLoaded", () => {
       </button>
     </div>
 
-    <!-- Content (Scrollable) -->
-    <div class="flex-grow overflow-y-auto px-6 py-4" id="cart-items-container"></div>
+    <!-- Вкладки: Корзина | Информация о заказе -->
+    <div class="flex border-b border-[#E5DCD3] bg-white">
+      <button type="button" id="checkout-tab-cart" onclick="switchCheckoutTab('cart')" class="flex-1 py-3 text-[10px] tracking-widest uppercase font-semibold border-b-2 border-[#1A1A1A] text-[#1A1A1A]">
+        Корзина
+      </button>
+      <button type="button" id="checkout-tab-order" onclick="switchCheckoutTab('order')" class="flex-1 py-3 text-[10px] tracking-widest uppercase font-semibold border-b-2 border-transparent text-[#8C847A]">
+        Информация о заказе
+      </button>
+    </div>
 
-    <!-- Summary & Form -->
-    <div class="border-t border-[#E5DCD3] bg-white p-6 space-y-4">
+    <div class="flex-grow overflow-y-auto px-6 py-4" id="panel-cart">
+      <div id="cart-items-container"></div>
+    </div>
+
+    <div class="hidden flex-grow overflow-y-auto px-6 py-4 space-y-4" id="panel-order">
+      <div id="order-info-summary" class="bg-white border border-[#E5DCD3] p-3 space-y-2 text-xs"></div>
+
+      <div>
+        <p class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37] mb-2">Способ получения</p>
+        <div class="grid grid-cols-1 gap-2">
+          <button type="button" id="btn-delivery-pickup" onclick="selectDeliveryType('pickup')" class="delivery-option text-left p-3 border border-[#E5DCD3] bg-white hover:border-[#D4AF37] transition">
+            <span class="block text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">Самовывоз из шоурума</span>
+            <span class="block text-[10px] text-[#8C847A] mt-1">Бесплатно</span>
+          </button>
+          <button type="button" id="btn-delivery-courier" onclick="selectDeliveryType('delivery')" class="delivery-option text-left p-3 border border-[#E5DCD3] bg-white hover:border-[#D4AF37] transition">
+            <span class="block text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">Курьер по Ташкенту</span>
+            <span id="courier-price-label" class="block text-[10px] text-[#8C847A] mt-1">С примеркой на дому</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="delivery-info-panel" class="bg-[#EFE9DF]/50 border border-[#E5DCD3] p-3 text-[11px] text-[#5C544A] leading-relaxed"></div>
+
+      <div class="space-y-3">
+        <p class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37]">Контактные данные</p>
+        <input type="text" id="order-name" placeholder="Ваше имя" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+        <input type="tel" id="order-phone" placeholder="Телефон (+998 XX XXX XX XX)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+        <input type="text" id="order-address" placeholder="Адрес доставки (район, улица, дом, подъезд)" class="hidden w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+        <input type="text" id="order-comment" placeholder="Комментарий (время, домофон — по желанию)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+        <select id="order-payment" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none">
+          <option value="cash">Оплата наличными / при получении</option>
+          <option value="click">Картой через CLICK</option>
+          <option value="payme">Картой через PAYME</option>
+        </select>
+      </div>
+
+      <select id="order-delivery" class="hidden" aria-hidden="true">
+        <option value="pickup">pickup</option>
+        <option value="delivery">delivery</option>
+      </select>
+    </div>
+
+    <div class="border-t border-[#E5DCD3] bg-white p-6 space-y-3">
       <div class="space-y-1.5 text-xs tracking-wider border-b border-[#FAF6F0] pb-3">
         <div class="flex justify-between text-[#8C847A]">
           <span>ТОВАРЫ:</span>
@@ -110,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div id="cart-delivery-row" class="hidden flex justify-between text-[#8C847A]">
           <span>ДОСТАВКА (с примеркой):</span>
-          <span class="font-semibold text-[#1A1A1A]">40 000 сум</span>
+          <span id="cart-delivery-price" class="font-semibold text-[#1A1A1A]">0 сум</span>
         </div>
         <div class="flex justify-between items-center font-semibold pt-1">
           <span class="text-[#8C847A] uppercase">ИТОГО К ОПЛАТЕ:</span>
@@ -118,30 +179,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
 
-      <div id="checkout-form-container" class="hidden space-y-3 pt-2">
-        <h4 class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37]">Оформление заказа</h4>
-        <input type="text" id="order-name" placeholder="Ваше Имя" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
-        <input type="tel" id="order-phone" placeholder="Телефон (+998XXXXXXXXX)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
-        
-        <select id="order-delivery" onchange="handleDeliveryChange()" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none">
-          <option value="pickup">Самовывоз (ул. Мирзо Улугбека, 99)</option>
-          <option value="delivery">Доставка курьером (по Ташкенту, +40 000 сум)</option>
-        </select>
-        <input type="text" id="order-address" placeholder="Адрес доставки" class="hidden w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
-        
-        <select id="order-payment" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none">
-          <option value="cash">Оплата наличными / при получении</option>
-          <option value="click">Картой через CLICK</option>
-          <option value="payme">Картой через PAYME</option>
-        </select>
-
-        <button onclick="submitOrder()" id="btn-submit-order" class="w-full bg-[#1A1A1A] text-white py-3 text-xs tracking-[0.2em] uppercase font-semibold hover:bg-[#D4AF37] transition">
-          ПОДТВЕРДИТЬ ЗАКАЗ
-        </button>
-      </div>
-
-      <button onclick="showCheckoutForm()" id="btn-checkout-trigger" class="w-full bg-[#1A1A1A] text-white py-3.5 text-xs tracking-[0.2em] uppercase font-semibold hover:bg-[#D4AF37] transition">
-        ПЕРЕЙТИ К ОФОРМЛЕНИЮ
+      <button type="button" onclick="submitOrder()" id="btn-submit-order" class="hidden w-full bg-[#D4AF37] text-white py-3 text-xs tracking-[0.2em] uppercase font-semibold hover:bg-[#1A1A1A] transition">
+        ПОДТВЕРДИТЬ ЗАКАЗ
+      </button>
+      <button type="button" onclick="showCheckoutForm()" id="btn-checkout-trigger" class="w-full bg-[#1A1A1A] text-white py-3.5 text-xs tracking-[0.2em] uppercase font-semibold hover:bg-[#D4AF37] transition">
+        ИНФОРМАЦИЯ О ЗАКАЗЕ
       </button>
     </div>
   `;
@@ -190,8 +232,18 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
   document.body.appendChild(modal);
 
-  // Обновляем бейдж корзины при загрузке страницы
+  const cfg = getDeliveryConfig();
+  const priceLabel = document.getElementById('courier-price-label');
+  if (priceLabel) {
+    priceLabel.textContent = `+${formatSum(cfg.courierPrice)} · с примеркой на дому`;
+  }
+  const deliveryPriceEl = document.getElementById('cart-delivery-price');
+  if (deliveryPriceEl) {
+    deliveryPriceEl.textContent = formatSum(cfg.courierPrice);
+  }
+
   updateCartBadge();
+  selectDeliveryType('pickup');
 });
 
 // Функции управления корзиной
@@ -246,12 +298,14 @@ function renderCart() {
     subtotalEl.textContent = '0 сум';
     totalPriceEl.textContent = '0 сум';
     if(deliveryRow) deliveryRow.classList.add('hidden');
-    document.getElementById('btn-checkout-trigger').classList.add('hidden');
-    document.getElementById('checkout-form-container').classList.add('hidden');
+    document.getElementById('btn-checkout-trigger')?.classList.add('hidden');
+    document.getElementById('btn-submit-order')?.classList.add('hidden');
+    switchCheckoutTab('cart');
     return;
   }
 
-  document.getElementById('btn-checkout-trigger').classList.remove('hidden');
+  document.getElementById('btn-checkout-trigger')?.classList.remove('hidden');
+  document.getElementById('btn-submit-order')?.classList.add('hidden');
 
   let itemsTotal = 0;
   container.innerHTML = cart.map((item, index) => {
@@ -283,12 +337,19 @@ function renderCart() {
   
   // Расчет доставки
   const delivery = document.getElementById('order-delivery') ? document.getElementById('order-delivery').value : 'pickup';
+  const deliveryFee = getDeliveryPrice();
   if (delivery === 'delivery') {
-    if(deliveryRow) deliveryRow.classList.remove('hidden');
-    totalPriceEl.textContent = formatSum(itemsTotal + DELIVERY_PRICE);
+    if (deliveryRow) deliveryRow.classList.remove('hidden');
+    const dp = document.getElementById('cart-delivery-price');
+    if (dp) dp.textContent = formatSum(deliveryFee);
+    totalPriceEl.textContent = formatSum(itemsTotal + deliveryFee);
   } else {
-    if(deliveryRow) deliveryRow.classList.add('hidden');
+    if (deliveryRow) deliveryRow.classList.add('hidden');
     totalPriceEl.textContent = formatSum(itemsTotal);
+  }
+
+  if (document.getElementById('panel-order') && !document.getElementById('panel-order').classList.contains('hidden')) {
+    renderOrderInfoSummary();
   }
 }
 
@@ -307,20 +368,130 @@ function removeFromCart(index) {
   renderCart();
 }
 
+function switchCheckoutTab(tab) {
+  const panelCart = document.getElementById('panel-cart');
+  const panelOrder = document.getElementById('panel-order');
+  const tabCart = document.getElementById('checkout-tab-cart');
+  const tabOrder = document.getElementById('checkout-tab-order');
+  const btnTrigger = document.getElementById('btn-checkout-trigger');
+  const btnSubmit = document.getElementById('btn-submit-order');
+
+  if (!panelCart || !panelOrder) return;
+
+  if (tab === 'order') {
+    if (cart.length === 0) return;
+    panelCart.classList.add('hidden');
+    panelOrder.classList.remove('hidden');
+    tabCart.classList.remove('border-[#1A1A1A]', 'text-[#1A1A1A]');
+    tabCart.classList.add('border-transparent', 'text-[#8C847A]');
+    tabOrder.classList.add('border-[#1A1A1A]', 'text-[#1A1A1A]');
+    tabOrder.classList.remove('border-transparent', 'text-[#8C847A]');
+    if (btnTrigger) btnTrigger.classList.add('hidden');
+    if (btnSubmit) btnSubmit.classList.remove('hidden');
+    renderOrderInfoSummary();
+    updateDeliveryUI();
+  } else {
+    panelCart.classList.remove('hidden');
+    panelOrder.classList.add('hidden');
+    tabOrder.classList.remove('border-[#1A1A1A]', 'text-[#1A1A1A]');
+    tabOrder.classList.add('border-transparent', 'text-[#8C847A]');
+    tabCart.classList.add('border-[#1A1A1A]', 'text-[#1A1A1A]');
+    tabCart.classList.remove('border-transparent', 'text-[#8C847A]');
+    if (btnSubmit) btnSubmit.classList.add('hidden');
+    if (btnTrigger) {
+      if (cart.length > 0) btnTrigger.classList.remove('hidden');
+      else btnTrigger.classList.add('hidden');
+    }
+  }
+}
+
 function showCheckoutForm() {
-  document.getElementById('btn-checkout-trigger').classList.add('hidden');
-  document.getElementById('checkout-form-container').classList.remove('hidden');
+  switchCheckoutTab('order');
+}
+
+function selectDeliveryType(type) {
+  const select = document.getElementById('order-delivery');
+  if (!select) return;
+  select.value = type;
+  handleDeliveryChange();
+  updateDeliveryUI();
+}
+
+function updateDeliveryUI() {
+  const type = document.getElementById('order-delivery')?.value || 'pickup';
+  const panel = document.getElementById('delivery-info-panel');
+  const addressInput = document.getElementById('order-address');
+  const btnPickup = document.getElementById('btn-delivery-pickup');
+  const btnCourier = document.getElementById('btn-delivery-courier');
+  const cfg = getDeliveryConfig();
+  const active = 'border-[#1A1A1A] ring-1 ring-[#D4AF37] bg-[#FAF6F0]';
+  const inactive = 'border-[#E5DCD3] bg-white';
+
+  if (btnPickup) {
+    btnPickup.className = `delivery-option text-left p-3 border transition ${type === 'pickup' ? active : inactive}`;
+  }
+  if (btnCourier) {
+    btnCourier.className = `delivery-option text-left p-3 border transition ${type === 'delivery' ? active : inactive}`;
+  }
+
+  if (type === 'delivery') {
+    if (addressInput) addressInput.classList.remove('hidden');
+    if (panel) {
+      panel.innerHTML = `
+        <p class="font-bold uppercase tracking-wider text-[#1A1A1A] mb-2">${cfg.courierTitle}</p>
+        <p>${cfg.courierDescription}</p>
+        <p class="mt-2"><strong>Стоимость:</strong> ${formatSum(cfg.courierPrice)}</p>
+        <p class="mt-1 text-[#8C847A]">После заказа менеджер позвонит и согласует удобное время.</p>`;
+    }
+  } else {
+    if (addressInput) addressInput.classList.add('hidden');
+    if (panel) {
+      panel.innerHTML = `
+        <p class="font-bold uppercase tracking-wider text-[#1A1A1A] mb-2">Самовывоз из шоурума Talaria</p>
+        <p><strong>Адрес:</strong> ${cfg.pickupAddress}</p>
+        <p class="mt-1"><strong>Режим работы:</strong> ${cfg.pickupHours}</p>
+        <p class="mt-1"><strong>Телефон:</strong> <a href="tel:${cfg.pickupPhone.replace(/\s/g, '')}" class="text-[#D4AF37] underline">${cfg.pickupPhone}</a></p>
+        <p class="mt-2 text-[#8C847A]">Доставка не оплачивается. Обувь можно примерить в шоуруме.</p>`;
+    }
+  }
+}
+
+function renderOrderInfoSummary() {
+  const box = document.getElementById('order-info-summary');
+  if (!box) return;
+
+  if (cart.length === 0) {
+    box.innerHTML = '<p class="text-[#8C847A]">Корзина пуста</p>';
+    return;
+  }
+
+  let itemsTotal = 0;
+  const lines = cart.map((item) => {
+    const numericPrice = parseInt(String(item.price).replace(/[^0-9]/g, ''), 10) || 0;
+    itemsTotal += numericPrice * item.quantity;
+    return `<div class="flex justify-between gap-2 border-b border-[#FAF6F0] pb-1.5">
+      <span class="line-clamp-1 flex-1">${cleanTitle(item.title)} · ${item.size}</span>
+      <span class="whitespace-nowrap text-[#8C847A]">×${item.quantity}</span>
+    </div>`;
+  });
+
+  const delivery = document.getElementById('order-delivery')?.value || 'pickup';
+  const deliverySum = delivery === 'delivery' ? getDeliveryPrice() : 0;
+  const total = itemsTotal + deliverySum;
+
+  box.innerHTML = `
+    <p class="text-[10px] uppercase tracking-widest font-bold text-[#D4AF37]">Состав заказа</p>
+    ${lines.join('')}
+    <div class="flex justify-between pt-2 font-semibold text-[#1A1A1A]">
+      <span>Итого</span>
+      <span>${formatSum(total)}</span>
+    </div>`;
 }
 
 function handleDeliveryChange() {
-  const delivery = document.getElementById('order-delivery').value;
-  const addressInput = document.getElementById('order-address');
-  if (delivery === 'delivery') {
-    addressInput.classList.remove('hidden');
-  } else {
-    addressInput.classList.add('hidden');
-  }
-  renderCart(); // Пересчитываем итог с доставкой
+  updateDeliveryUI();
+  renderCart();
+  renderOrderInfoSummary();
 }
 
 async function submitOrder() {
@@ -350,13 +521,23 @@ async function submitOrder() {
     itemsTotal += numericPrice * item.quantity;
   });
 
-  const finalTotal = delivery === 'delivery' ? itemsTotal + DELIVERY_PRICE : itemsTotal;
+  const cfg = getDeliveryConfig();
+  const deliveryFee = getDeliveryPrice();
+  const finalTotal = delivery === 'delivery' ? itemsTotal + deliveryFee : itemsTotal;
+  const comment = document.getElementById('order-comment')?.value.trim() || '';
+
+  let addressLine = address;
+  if (delivery === 'pickup') {
+    addressLine = `Самовывоз: ${cfg.pickupAddress}`;
+  } else if (comment) {
+    addressLine = `${address} (${comment})`;
+  }
 
   try {
     const orderData = {
       customer_name: name,
       phone: phone,
-      address: delivery === 'pickup' ? 'Самовывоз (Мирзо Улугбека, 99)' : address,
+      address: addressLine,
       delivery_type: delivery,
       payment_method: payment,
       items: cart.map(item => ({
@@ -388,6 +569,9 @@ async function submitOrder() {
     document.getElementById('order-name').value = '';
     document.getElementById('order-phone').value = '';
     document.getElementById('order-address').value = '';
+    const commentEl = document.getElementById('order-comment');
+    if (commentEl) commentEl.value = '';
+    switchCheckoutTab('cart');
 
     openPaymentModal(orderId, name, finalTotal, payment);
   } catch (e) {

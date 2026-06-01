@@ -18,6 +18,7 @@
     
     <meta name="description" content="Полный каталог премиальной женской обуви больших размеров в Ташкенте от бутика Talaria." />
     
+    <link rel="stylesheet" href="theme.css" />
     <style>
       body {
         font-family: 'Outfit', sans-serif;
@@ -34,7 +35,7 @@
 
     <!-- Top Announcement Bar -->
     <div class="bg-[#1A1A1A] text-[#FAF6F0] text-center text-[10px] sm:text-xs tracking-[0.2em] py-2.5 uppercase font-medium">
-      ДОСТАВКА 40.000 СУМ ПО ТАШКЕНТУ С ПРИМЕРКОЙ • БЫСТРАЯ ОТПРАВКА ПО УЗБЕКИСТАНУ
+      КАТАЛОГ В НАЛИЧИИ • ЗАКАЗ НА САЙТЕ • ОБНОВЛЕНИЕ ИЗ TELEGRAM
     </div>
 
     <!-- Header / Navigation -->
@@ -168,6 +169,7 @@
     <!-- Scripts -->
     <script src="config.js"></script>
     <script src="cart.js"></script>
+    <script src="live-catalog.js"></script>
     <script>
       const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
       
@@ -193,7 +195,7 @@
         const cleanedSizes = cleanSizes(p.sizes);
 
         return `
-          <div class="group relative bg-white border border-[#E5DCD3]/50 p-4 transition-all duration-300 hover:shadow-lg hover:border-[#D4AF37] flex flex-col justify-between h-full cursor-pointer" onclick="openProduct(${p.id})">
+          <div class="product-card-lux group relative bg-white border border-[#E5DCD3]/50 p-4 flex flex-col justify-between h-full cursor-pointer" onclick="openProduct(${p.id})">
             <div>
               <div class="overflow-hidden aspect-square bg-gray-50 relative">
                 <img src="${photo}" alt="${cleanedTitle}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'">
@@ -340,6 +342,7 @@
         if (typeof cleanSizes !== 'function' || typeof formatPriceHTML !== 'function') return;
         catalogBooted = true;
         loadProducts();
+        bindProductLiveRefresh(_sb, loadProducts);
       }
       bootCatalog();
       window.addEventListener('load', bootCatalog);

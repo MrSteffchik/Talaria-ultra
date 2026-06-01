@@ -20,8 +20,10 @@ CREATE INDEX idx_products_created ON products(created_at DESC);
 -- Разрешить публичное чтение (анонимный ключ сайта)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
+-- Каталог на сайте фильтрует is_available = true; политика читает все строки,
+-- чтобы страница товара могла показать «продано» по старой ссылке.
 CREATE POLICY "Public read" ON products
-  FOR SELECT USING (is_available = true);
+  FOR SELECT USING (true);
 
 -- Только сервисный ключ бота может писать
 CREATE POLICY "Service write" ON products

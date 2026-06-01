@@ -1,0 +1,36 @@
+/* Talaria — более живой, «магазинный» вид */
+.hero-rich {
+  background: linear-gradient(135deg, #f5ebe0 0%, #faf6f0 40%, #efe0cf 100%);
+}
+.hero-rich::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 20% 30%, rgba(212, 175, 55, 0.18), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 70%, rgba(180, 120, 90, 0.12), transparent 50%);
+  pointer-events: none;
+}
+.shop-online-banner {
+  background: linear-gradient(90deg, #1a1a1a 0%, #3d3428 50%, #1a1a1a 100%);
+}
+.product-card-lux {
+  transition: box-shadow 0.35s ease, border-color 0.35s ease, transform 0.35s ease;
+}
+.product-card-lux:hover {
+  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.55);
+  transform: translateY(-2px);
+}
+.product-card-lux img {
+  transition: transform 0.6s ease;
+}
+.product-card-lux:hover img {
+  transform: scale(1.06);
+}
+.badge-live {
+  animation: pulse-soft 2.5s ease-in-out infinite;
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}

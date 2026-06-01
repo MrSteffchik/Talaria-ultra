@@ -18,6 +18,7 @@
     
     <meta name="description" content="Talaria — премиальный бутик женской обуви больших размеров в Ташкенте. Поставки из Турции и Пекина." />
     
+    <link rel="stylesheet" href="theme.css" />
     <style>
       body {
         font-family: 'Outfit', sans-serif;
@@ -34,7 +35,7 @@
 
     <!-- Top Announcement Bar -->
     <div class="bg-[#1A1A1A] text-[#FAF6F0] text-center text-[10px] sm:text-xs tracking-[0.2em] py-2.5 uppercase font-medium">
-      ДОСТАВКА 40.000 СУМ ПО ТАШКЕНТУ С ПРИМЕРКОЙ • БЫСТРАЯ ОТПРАВКА ПО УЗБЕКИСТАНУ
+      ЗАКАЗ НА САЙТЕ • ДОСТАВКА 40.000 СУМ С ПРИМЕРКОЙ • КАТАЛОГ ОБНОВЛЯЕТСЯ ИЗ TELEGRAM
     </div>
 
     <!-- Header / Navigation -->
@@ -86,7 +87,7 @@
     <main class="flex-grow">
 
       <!-- Hero Section -->
-      <section class="relative py-20 sm:py-32 md:py-40 px-6 overflow-hidden bg-gradient-to-b from-[#EFE9DF] to-[#FAF6F0] border-b border-[#E5DCD3]/50">
+      <section class="hero-rich relative py-20 sm:py-32 md:py-40 px-6 overflow-hidden border-b border-[#E5DCD3]/50">
         <div class="max-w-5xl mx-auto text-center relative z-10 space-y-6">
           <h2 class="text-3xl sm:text-5xl md:text-7xl font-serif-luxury font-light text-[#1A1A1A] leading-tight tracking-wider">
             Эксклюзивная обувь <br />больших размеров
@@ -94,10 +95,13 @@
           <p class="text-xs sm:text-sm text-[#5C544A] tracking-widest max-w-lg mx-auto font-light leading-relaxed uppercase">
             Турция • Пекин • Высокий комфорт • 11 лет безупречного стиля
           </p>
-          <div class="pt-4">
+          <div class="pt-4 flex flex-col sm:flex-row gap-3 justify-center items-center">
             <a href="catalog.html" class="inline-block bg-[#1A1A1A] text-[#FAF6F0] hover:bg-[#D4AF37] hover:text-white px-8 py-3.5 text-xs font-semibold tracking-[0.2em] uppercase rounded-none transition duration-300">
               Открыть каталог
             </a>
+            <button type="button" onclick="toggleCart(true)" class="inline-block border-2 border-[#D4AF37] text-[#1A1A1A] hover:bg-[#D4AF37] hover:text-white px-8 py-3.5 text-xs font-semibold tracking-[0.2em] uppercase transition duration-300">
+              Оформить заказ
+            </button>
           </div>
         </div>
         
@@ -105,6 +109,17 @@
         <div class="absolute inset-0 flex items-center justify-between opacity-15 pointer-events-none">
           <div class="w-64 h-64 border border-[#D4AF37] rounded-full -ml-32"></div>
           <div class="w-80 h-80 border border-[#D4AF37] rounded-full -mr-40"></div>
+        </div>
+      </section>
+
+      <!-- Онлайн-покупка (пожелание владельца) -->
+      <section class="shop-online-banner text-[#FAF6F0] py-10 px-6 border-b border-[#D4AF37]/20">
+        <div class="max-w-3xl mx-auto text-center space-y-4">
+          <p class="text-[10px] tracking-[0.35em] uppercase text-[#D4AF37] font-bold badge-live">Покупка на сайте работает</p>
+          <p class="text-sm sm:text-base font-light leading-relaxed text-[#E5DCD3]">
+            Выберите модель и размер → корзина → доставка с примеркой или самовывоз на Мирзо Улугбека 99 → оплата Click, Payme или при получении. Мы перезвоним и подтвердим заказ.
+          </p>
+          <p class="text-[10px] tracking-widest uppercase text-[#8C847A]">Проданные модели убираются из каталога — ответ «продано» в Telegram</p>
         </div>
       </section>
 
@@ -128,7 +143,7 @@
         <div class="flex flex-col sm:flex-row items-center justify-between mb-12">
           <div class="text-center sm:text-left space-y-1">
             <h2 class="text-2xl sm:text-3xl font-serif-luxury tracking-wide">Новые поступления</h2>
-            <p class="text-[9px] sm:text-xs tracking-widest text-[#8C847A] uppercase">Свежие и актуальные модели на этой неделе</p>
+            <p class="text-[9px] sm:text-xs tracking-widest text-[#8C847A] uppercase"><span class="badge-live text-[#D4AF37]">●</span> Обновляется из Telegram — только в наличии</p>
           </div>
           <a href="catalog.html" class="mt-4 sm:mt-0 text-xs font-semibold tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] uppercase border border-[#E5DCD3] hover:border-[#1A1A1A] px-6 py-2.5 transition">
             Все модели →
@@ -140,8 +155,8 @@
           <div class="w-8 h-8 border-2 border-t-[#D4AF37] border-b-transparent border-l-transparent border-r-transparent rounded-full animate-spin mb-3"></div>
         </div>
         
-        <div id="featured-grid" class="hidden grid grid-cols-2 md:grid-cols-4 gap-6">
-          <!-- Populated dynamically with latest 4 items -->
+        <div id="featured-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+          <!-- На главной — только 10 последних; полный каталог на catalog.html -->
         </div>
       </section>
 
@@ -183,10 +198,12 @@
     <!-- Scripts -->
     <script src="config.js"></script>
     <script src="cart.js"></script>
+    <script src="live-catalog.js"></script>
     <script>
       const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
       
-      // Load only 4 latest featured products
+      const FEATURED_LIMIT = 10;
+
       async function loadFeaturedProducts() {
         const grid = document.getElementById('featured-grid');
         const loader = document.getElementById('featured-loading');
@@ -197,7 +214,7 @@
             .select('id, title, price, photos, sizes, description')
             .eq('is_available', true)
             .order('created_at', { ascending: false })
-            .limit(4);
+            .limit(FEATURED_LIMIT);
             
           if (error) throw error;
           
@@ -212,7 +229,7 @@
               const cleanPSizes = cleanSizes(p.sizes);
               
               return `
-                <div class="group cursor-pointer bg-white border border-[#E5DCD3]/50 p-4 transition-all hover:shadow-lg hover:border-[#D4AF37]" onclick="openProduct(${p.id})">
+                <div class="product-card-lux group cursor-pointer bg-white border border-[#E5DCD3]/50 p-4" onclick="openProduct(${p.id})">
                   <div class="overflow-hidden aspect-square bg-gray-50 mb-3">
                     <img src="${photo}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/300x300?text=Нет+фото'" />
                   </div>
@@ -245,6 +262,7 @@
         if (typeof cleanSizes !== 'function' || typeof cleanTitle !== 'function') return;
         featuredBooted = true;
         loadFeaturedProducts();
+        bindProductLiveRefresh(_sb, loadFeaturedProducts);
       }
       bootFeatured();
       window.addEventListener('load', bootFeatured);

@@ -19,6 +19,7 @@
     <link rel="icon" type="image/svg+xml"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👠</text></svg>" />
       
+    <link rel="stylesheet" href="theme.css" />
     <style>
       body {
         font-family: 'Outfit', sans-serif;
@@ -74,8 +75,17 @@
       <!-- Error State -->
       <div id="error" class="hidden text-center py-32 text-[#8C847A]">
         <p class="mb-4 text-sm font-light">Товар временно не найден</p>
-        <a href="index.html" class="border border-[#1A1A1A] text-xs font-semibold tracking-widest uppercase px-6 py-3 hover:bg-[#1A1A1A] hover:text-[#FAF6F0] transition">
+        <a href="catalog.html" class="border border-[#1A1A1A] text-xs font-semibold tracking-widest uppercase px-6 py-3 hover:bg-[#1A1A1A] hover:text-[#FAF6F0] transition">
           Вернуться к каталогу
+        </a>
+      </div>
+
+      <!-- Sold out -->
+      <div id="sold-out" class="hidden text-center py-32 max-w-md mx-auto px-6">
+        <p class="text-[10px] tracking-[0.3em] uppercase text-[#D4AF37] font-bold mb-3">Нет в наличии</p>
+        <p class="mb-6 text-sm text-[#5C544A] font-light leading-relaxed">Эта модель уже продана и убрана из каталога. Посмотрите другие новинки — каталог обновляется из Telegram.</p>
+        <a href="catalog.html" class="inline-block bg-[#1A1A1A] text-[#FAF6F0] text-xs font-semibold tracking-widest uppercase px-8 py-3 hover:bg-[#D4AF37] transition">
+          Смотреть каталог
         </a>
       </div>
 
@@ -174,7 +184,16 @@
             .eq('id', id)
             .single();
 
-          if (error || !data) { showError(); return; }
+          if (error || !data) {
+            if (error?.code === 'PGRST116') showSoldOut();
+            else showError();
+            return;
+          }
+
+          if (data.is_available === false) {
+            showSoldOut();
+            return;
+          }
 
           productData = data;
           renderProduct(data);
@@ -325,6 +344,12 @@
       function showError() {
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('error').classList.remove('hidden');
+      }
+
+      function showSoldOut() {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('product').classList.add('hidden');
+        document.getElementById('sold-out').classList.remove('hidden');
       }
 
       loadProduct();
