@@ -216,44 +216,44 @@
       }
 
       async function loadSiblingVariants(current) {
-        const vk = current.variant_key || getVariantKey(current);
-        if (!vk) return;
         try {
-          const { data: siblings, error } = await _sb
-            .from('products')
-            .select('*')
-            .eq('variant_key', vk)
-            .eq('is_available', true);
-          if (!error && siblings && siblings.length) {
-            const grouped = groupCatalogProducts(siblings);
-            productVariants = grouped[0] ? grouped[0].variants : siblings;
-          }
+          productVariants = await loadVariantsForProduct(_sb, current);
         } catch (e) {
           console.warn('variants load', e);
+          productVariants = [current];
         }
       }
 
       function renderColorSelector() {
         const block = document.getElementById('colors-block');
         const box = document.getElementById('colors-container');
-        const unique = [];
+        let unique = [];
         for (const v of productVariants) {
           const c = getProductColor(v);
-          if (!c) continue;
-          if (!unique.some((u) => getProductColor(u) === c)) unique.push(v);
+          if (c && !unique.some((u) => getProductColor(u) === c)) unique.push(v);
+        }
+        if (unique.length < 2 && productVariants.length >= 2) {
+          unique = productVariants;
         }
         if (unique.length < 2) {
           block.classList.add('hidden');
           return;
         }
         block.classList.remove('hidden');
-        box.innerHTML = unique.map((v) => {
+        box.innerHTML = unique.map((v, i) => {
           const c = getProductColor(v);
           const active = productData && productData.id === v.id;
-          return `<span class="inline-flex flex-col items-center gap-1">
-            ${colorSwatchHTML(c, active, `onclick="selectColorVariant(${v.id})"`)}
-            <span class="text-[9px] text-[#8C847A]">${c}</span>
-          </span>`;
+          const thumb = (v.photos && v.photos[0]) ? v.photos[0] : '';
+          if (c) {
+            return `<span class="inline-flex flex-col items-center gap-1">
+              ${colorSwatchHTML(c, active, `onclick="selectColorVariant(${v.id})"`)}
+              <span class="text-[9px] text-[#8C847A]">${c}</span>
+            </span>`;
+          }
+          return `<button type="button" onclick="selectColorVariant(${v.id})" class="inline-flex flex-col items-center gap-1">
+            <img src="${thumb}" alt="" class="w-10 h-10 object-cover border-2 ${active ? 'border-[#D4AF37]' : 'border-[#E5DCD3]'} rounded-sm" />
+            <span class="text-[9px] text-[#8C847A]">Вариант ${i + 1}</span>
+          </button>`;
         }).join('');
       }
 

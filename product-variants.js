@@ -104,6 +104,43 @@ function colorSwatchHTML(color, active, onclickAttr) {
   return `<button type="button" ${onclickAttr} class="color-chip w-8 h-8 rounded-full border-2 ${border} shrink-0" style="background:${hex}" ${label} aria-label="${color || 'цвет'}"></button>`;
 }
 
+/** Варианты одной модели (работает и без колонок color/variant_key в БД) */
+async function loadVariantsForProduct(sb, current) {
+  const vk = getVariantKey(current);
+  if (!sb || !current) return [current];
+
+  if (current.variant_key) {
+    const { data: siblings, error } = await sb
+      .from('products')
+      .select('*')
+      .eq('variant_key', current.variant_key)
+      .eq('is_available', true);
+    if (!error && siblings && siblings.length > 1) {
+      const g = groupCatalogProducts(siblings);
+      return g[0] ? g[0].variants : siblings;
+    }
+  }
+
+  let all = null;
+  let err = null;
+  ({ data: all, error: err } = await sb
+    .from('products')
+    .select('id, title, sizes, price, photos, description, color, variant_key')
+    .eq('is_available', true));
+  if (err && (err.code === '42703' || String(err.message || '').includes('color'))) {
+    ({ data: all, error: err } = await sb
+      .from('products')
+      .select('id, title, sizes, price, photos, description')
+      .eq('is_available', true));
+  }
+  if (err || !all) return [current];
+
+  const matches = all.filter((p) => getVariantKey(p) === vk);
+  if (matches.length <= 1) return [current];
+  const g = groupCatalogProducts(matches);
+  return g[0] ? g[0].variants : matches;
+}
+
 function colorDotsHTML(variants, max) {
   const colors = [];
   for (const v of variants) {

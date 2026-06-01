@@ -113,6 +113,23 @@ function isSizeOnlyTitle(title) {
   return /^[\d\s,.\-]+$/.test(title.replace(/\s/g, ''));
 }
 
+async function patchProduct(id, headers, payload) {
+  let res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok && (payload.color !== undefined || payload.variant_key !== undefined)) {
+    const { color, variant_key, ...rest } = payload;
+    res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(rest),
+    });
+  }
+  return res;
+}
+
 async function run() {
   console.log('Получаем список всех товаров...');
   if (DRY_RUN) console.log('Режим dry-run: в БД ничего не записываем.\n');
@@ -121,6 +138,16 @@ async function run() {
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
   };
+
+  const probe = await fetch(`${SUPABASE_URL}/rest/v1/products?select=color,variant_key&limit=1`, { headers });
+  const hasVariantColumns = probe.ok;
+  if (!hasVariantColumns) {
+    console.warn(
+      '\n⚠️  Колонки color / variant_key ещё нет. Выполните в Supabase SQL:\n' +
+        '    supabase/migration_color_variants.sql\n' +
+        '    Затем снова: node clean_db.js\n'
+    );
+  }
 
   const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*`, { headers });
   if (!res.ok) {
@@ -175,18 +202,17 @@ async function run() {
       console.log(`  Стало: Title: "${cleanedTitle}" | Sizes: "${cleanedSizes}" | Price: "${cleanedPrice}"`);
 
       if (!DRY_RUN) {
-        const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
-          method: 'PATCH',
-          headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-          body: JSON.stringify({
-            title: cleanedTitle,
-            description: cleanedDesc || null,
-            sizes: cleanedSizes || null,
-            price: cleanedPrice,
-            color: productColor,
-            variant_key: variantKey,
-          }),
-        });
+        const payload = {
+          title: cleanedTitle,
+          description: cleanedDesc || null,
+          sizes: cleanedSizes || null,
+          price: cleanedPrice,
+        };
+        if (hasVariantColumns) {
+          payload.color = productColor || null;
+          payload.variant_key = variantKey;
+        }
+        const updateRes = await patchProduct(id, headers, payload);
         if (!updateRes.ok) {
           console.error(`Ошибка при обновлении #${id}:`, updateRes.statusText);
           continue;
