@@ -379,27 +379,51 @@ async def upload_photo(data: bytes, filename: str) -> str | None:
         return None
 
 
-# ─── Снятие / возврат товара с сайта (ответ «продано» на пост) ─────────────────
+# ─── Снятие / возврат товара с сайта (ответ «продано» / «продано 42») ────────
 
 _SOLD_CMD = re.compile(
-    r"^(продан[аоы]?|продано|sold|снять|убрать|распродан[ао]?|нет\s+в\s+наличии)\.?!?$",
+    r"^(продан[аоы]?|продано|sold|снять|убрать|распродан[ао]?|нет\s+в\s+наличии)"
+    r"(?:\s+(.+))?\s*\.?!?$",
     re.IGNORECASE,
 )
 _AVAILABLE_CMD = re.compile(
-    r"^(в\s+наличии|вернуть|доступно|available)\.?!?$",
+    r"^(в\s+наличии|вернуть|доступно|available)(?:\s+(.+))?\s*\.?!?$",
     re.IGNORECASE,
 )
+
+
+def parse_sizes_field(sizes_str: str | None) -> list[str]:
+    return extract_size_numbers(sizes_str or "")
+
+
+def format_sizes_field(sizes: list[str]) -> str | None:
+    return ", ".join(sizes) if sizes else None
+
+
+def parse_availability_command(text: str) -> tuple[str | None, list[str]]:
+    """('sold' | 'available' | None, размеры). Пустой список размеров = вся модель."""
+    text = (text or "").strip()
+    m = _SOLD_CMD.match(text)
+    if m:
+        rest = (m.group(2) or "").strip()
+        return "sold", extract_size_numbers(rest) if rest else []
+    m = _AVAILABLE_CMD.match(text)
+    if m:
+        rest = (m.group(2) or "").strip()
+        return "available", extract_size_numbers(rest) if rest else []
+    return None, []
 
 
 def _find_product_for_reply(replied: Message) -> dict | None:
     """Находит товар по сообщению, на которое ответили."""
     rid = replied.message_id
     mgid = replied.media_group_id
+    fields = "id, title, sizes, is_available"
 
     if mgid:
         res = (
             supabase.table("products")
-            .select("id, title, is_available")
+            .select(fields)
             .eq("telegram_media_group_id", mgid)
             .limit(1)
             .execute()
@@ -409,7 +433,7 @@ def _find_product_for_reply(replied: Message) -> dict | None:
 
     res = (
         supabase.table("products")
-        .select("id, title, is_available")
+        .select(fields)
         .eq("telegram_message_id", rid)
         .limit(1)
         .execute()
@@ -423,30 +447,81 @@ async def handle_availability_reply(update: Update, context: ContextTypes.DEFAUL
         return
 
     text = msg.text.strip()
-    mark_sold = bool(_SOLD_CMD.match(text))
-    mark_available = bool(_AVAILABLE_CMD.match(text))
-    if not mark_sold and not mark_available:
+    action, size_nums = parse_availability_command(text)
+    if not action:
         return
 
     product = _find_product_for_reply(msg.reply_to_message)
     if not product:
         await msg.reply_text(
-            "⚠️ Товар не найден. Ответьте «продано» именно на **фото с подписью**, "
-            "которое бот уже добавил в каталог.",
+            "⚠️ Товар не найден. Ответьте на **фото с подписью**, "
+            "которое бот уже добавил в каталог.\n"
+            "Примеры: `продано`, `продано 42`, `в наличии 41`",
             parse_mode="Markdown",
         )
         return
 
-    is_avail = True if mark_available else False
-    supabase.table("products").update({"is_available": is_avail}).eq("id", product["id"]).execute()
-
+    pid = product["id"]
     title = product.get("title") or "Модель"
+    current_sizes = parse_sizes_field(product.get("sizes"))
+
+    if action == "sold" and size_nums:
+        if not current_sizes:
+            await msg.reply_text(
+                f"⚠️ У «{title}» в каталоге **не указаны размеры**.\n"
+                "Напишите просто **продано** — снимется вся модель.",
+                parse_mode="Markdown",
+            )
+            return
+
+        to_remove = [s for s in size_nums if s in current_sizes]
+        if not to_remove:
+            have = format_sizes_field(current_sizes) or "—"
+            ask = ", ".join(size_nums)
+            await msg.reply_text(
+                f"⚠️ Размер(ы) **{ask}** не найдены.\nВ каталоге сейчас: {have}",
+                parse_mode="Markdown",
+            )
+            return
+
+        remaining = [s for s in current_sizes if s not in to_remove]
+        update: dict = {"sizes": format_sizes_field(remaining)}
+        if not remaining:
+            update["is_available"] = False
+        supabase.table("products").update(update).eq("id", pid).execute()
+
+        removed = ", ".join(to_remove)
+        if remaining:
+            left = format_sizes_field(remaining)
+            reply = f"✅ «{title}»: снят размер **{removed}**.\nОстались: {left}"
+        else:
+            reply = f"✅ «{title}»: размер **{removed}** продан.\nВся модель **снята с сайта**."
+        await msg.reply_text(reply, parse_mode="Markdown")
+        log.info("Товар id=%s сняты размеры %s, осталось %s", pid, removed, remaining)
+        return
+
+    if action == "available" and size_nums:
+        merged = sorted(set(current_sizes) | set(size_nums), key=int)
+        supabase.table("products").update({
+            "sizes": format_sizes_field(merged),
+            "is_available": True,
+        }).eq("id", pid).execute()
+        added = ", ".join(size_nums)
+        all_sizes = format_sizes_field(merged)
+        reply = f"✅ «{title}»: размер **{added}** снова в наличии.\nРазмеры: {all_sizes}"
+        await msg.reply_text(reply, parse_mode="Markdown")
+        log.info("Товар id=%s возвращены размеры %s", pid, added)
+        return
+
+    # Вся модель
+    is_avail = action == "available"
+    supabase.table("products").update({"is_available": is_avail}).eq("id", pid).execute()
     if is_avail:
         reply = f"✅ «{title}» снова **в каталоге** на сайте."
     else:
         reply = f"✅ «{title}» **снята с сайта** (продано)."
     await msg.reply_text(reply, parse_mode="Markdown")
-    log.info("Товар id=%s is_available=%s (команда: %s)", product["id"], is_avail, text)
+    log.info("Товар id=%s is_available=%s (команда: %s)", pid, is_avail, text)
 
 
 # ─── Обработчик сообщений ─────────────────────────────────────────────────────
@@ -592,8 +667,8 @@ async def order_checker_loop(app: Application):
                         f"💳 **Оплата:** {pay_str}\n\n"
                         f"🛍️ **Состав заказа:**\n{items_str}\n\n"
                         f"💰 **Итого к оплате:** {total:,} сум\n\n"
-                        f"📌 После выдачи ответьте **«продано»** на пост модели в группе — "
-                        f"она исчезнет с talaria.uz."
+                        f"📌 После выдачи: **«продано»** (вся модель) или **«продано 42»** "
+                        f"(только размер) на пост в группе."
                     ).replace(",", " ")
                     
                     # Отправляем уведомление администратору
@@ -625,7 +700,7 @@ def main():
     app = Application.builder().token(TELEGRAM_TOKEN).post_init(post_init).build()
     app.add_handler(MessageHandler(filters.PHOTO, handle_message))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_availability_reply))
-    log.info("Бот запущен — фото в каталог, ответ «продано» снимает с сайта...")
+    log.info("Бот запущен — каталог из фото, «продано» / «продано 42» снимает с сайта...")
     app.run_polling(allowed_updates=["message", "channel_post"])
 
 
