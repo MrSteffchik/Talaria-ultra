@@ -248,9 +248,12 @@
                   <h4 class="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] truncate">${cleanPTitle}</h4>
                   ${cleanPSizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider">Размеры: ${cleanPSizes}</p>` : ''}
                   ${dots}
-                  <div class="flex items-center justify-between border-t border-[#FAF6F0] pt-2.5 mt-2">
-                    <span class="text-xs font-bold text-[#D4AF37]">${formatPriceHTML(p.price)}</span>
-                    <span class="text-[9px] font-bold text-[#1A1A1A] uppercase group-hover:text-[#D4AF37] transition">Смотреть →</span>
+                  <div class="border-t border-[#FAF6F0] pt-2.5 mt-2 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-[#D4AF37]">${formatPriceHTML(p.price)}</span>
+                      <span class="text-[9px] font-bold text-[#1A1A1A] uppercase group-hover:text-[#D4AF37] transition">Смотреть →</span>
+                    </div>
+                    ${telegramAskButtonHTML(p, 'mt-0')}
                   </div>
                 </div>
               `;
@@ -272,7 +275,7 @@
       let featuredBooted = false;
       function bootFeatured() {
         if (featuredBooted) return;
-        if (typeof cleanSizes !== 'function' || typeof cleanTitle !== 'function' || typeof groupCatalogProducts !== 'function') return;
+        if (typeof cleanSizes !== 'function' || typeof cleanTitle !== 'function' || typeof groupCatalogProducts !== 'function' || typeof telegramAskButtonHTML !== 'function') return;
         featuredBooted = true;
         loadFeaturedProducts();
         bindProductLiveRefresh(_sb, loadFeaturedProducts);

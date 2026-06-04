@@ -146,8 +146,8 @@
               ДОБАВИТЬ В КОРЗИНУ
             </button>
             
-            <a id="tg-order" href="#" target="_blank" class="w-full border border-blue-500 text-blue-500 hover:bg-blue-50 text-xs py-3.5 tracking-[0.15em] uppercase font-semibold transition flex items-center justify-center gap-2">
-              ✈️ ЗАКАЗАТЬ НАПРЯМУЮ В TELEGRAM
+            <a id="tg-order" href="#" target="_blank" rel="noopener noreferrer" class="w-full border border-[#229ED9] text-[#229ED9] hover:bg-[#229ED9]/10 text-xs py-3.5 tracking-[0.15em] uppercase font-semibold transition flex items-center justify-center gap-2">
+              Спросить в Telegram
             </a>
             
             <a href="tel:+998908257337" class="w-full border border-[#E5DCD3] text-[#8C847A] hover:text-[#1A1A1A] hover:border-[#1A1A1A] text-xs py-3.5 tracking-[0.15em] uppercase font-semibold transition flex items-center justify-center gap-2">
@@ -333,9 +333,10 @@
         }
 
         // Direct Telegram Order Link
-        const colorPart = selectedColor ? `, цвет: ${selectedColor}` : '';
-        const text = encodeURIComponent(`Хочу заказать: ${cleanedTitle}${colorPart} | ${p.price || ''}`);
-        document.getElementById('tg-order').href = `https://t.me/nalabutenahZK?text=${text}`;
+        document.getElementById('tg-order').href = buildTelegramAskUrl({
+          ...p,
+          id: productData?.id || p.id,
+        });
 
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('product').classList.remove('hidden');

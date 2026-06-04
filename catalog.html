@@ -205,9 +205,12 @@
               ${cleanedSizes ? `<p class="text-[10px] text-[#8C847A] tracking-wider">Размеры: ${cleanedSizes}</p>` : ''}
               ${dots}
             </div>
-            <div class="flex items-center justify-between border-t border-[#FAF6F0] pt-3 mt-auto">
-              <span class="text-xs font-bold text-[#D4AF37]">${formatPriceHTML(p.price)}</span>
-              <span class="text-[9px] font-bold tracking-widest text-[#1A1A1A] group-hover:text-[#D4AF37] transition uppercase">ПОДРОБНЕЕ →</span>
+            <div class="border-t border-[#FAF6F0] pt-3 mt-auto space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-[#D4AF37]">${formatPriceHTML(p.price)}</span>
+                <span class="text-[9px] font-bold tracking-widest text-[#1A1A1A] group-hover:text-[#D4AF37] transition uppercase">ПОДРОБНЕЕ →</span>
+              </div>
+              ${telegramAskButtonHTML(p, 'mt-0')}
             </div>
           </div>`;
       }
@@ -348,7 +351,7 @@
       let catalogBooted = false;
       function bootCatalog() {
         if (catalogBooted) return;
-        if (typeof cleanSizes !== 'function' || typeof formatPriceHTML !== 'function' || typeof groupCatalogProducts !== 'function') return;
+        if (typeof cleanSizes !== 'function' || typeof formatPriceHTML !== 'function' || typeof groupCatalogProducts !== 'function' || typeof telegramAskButtonHTML !== 'function') return;
         catalogBooted = true;
         loadProducts();
         bindProductLiveRefresh(_sb, loadProducts);

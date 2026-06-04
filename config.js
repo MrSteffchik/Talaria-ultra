@@ -29,5 +29,10 @@ const CONFIG = {
     SEO_SETTINGS: {
         defaultDescription: 'Стильная и удобная обувь',
         brandName: 'Talaria'
-    }
+    },
+
+    // Telegram-магазин (кнопка «Спросить» на карточках)
+    TELEGRAM: {
+        username: 'nalabutenahZK',
+    },
 };

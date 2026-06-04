@@ -141,6 +141,37 @@ async function loadVariantsForProduct(sb, current) {
   return g[0] ? g[0].variants : matches;
 }
 
+function buildTelegramAskUrl(product) {
+  const user = (typeof CONFIG !== 'undefined' && CONFIG.TELEGRAM?.username)
+    ? CONFIG.TELEGRAM.username
+    : 'nalabutenahZK';
+  const title = typeof cleanTitle === 'function'
+    ? cleanTitle(product.title, product.description)
+    : (product.title || 'Модель');
+  const sizes = typeof cleanSizes === 'function' ? cleanSizes(product.sizes || '') : (product.sizes || '');
+  const color = getProductColor(product);
+  let price = (product.price || '').trim();
+  price = price.replace(/\s*\((?:было|было:)\s*.*\)\s*$/i, '').trim();
+  const id = product.id ? `https://talaria.uz/product.html?id=${product.id}` : 'https://talaria.uz/catalog.html';
+  const lines = [
+    'Здравствуйте! Хочу уточнить по модели с сайта talaria.uz:',
+    '',
+    title,
+    price ? `Цена: ${price}` : '',
+    sizes ? `Размеры: ${sizes}` : '',
+    color ? `Цвет: ${color}` : '',
+    `Ссылка: ${id}`,
+  ].filter((line) => line !== '');
+  return `https://t.me/${user}?text=${encodeURIComponent(lines.join('\n'))}`;
+}
+
+function telegramAskButtonHTML(product, extraClass) {
+  const url = buildTelegramAskUrl(product);
+  const base = 'block w-full text-center text-[9px] font-bold tracking-widest uppercase py-2 border border-[#229ED9] text-[#229ED9] hover:bg-[#229ED9]/10 transition';
+  const cls = extraClass ? `${base} ${extraClass}` : `${base} mt-2`;
+  return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="${cls}">Спросить в Telegram</a>`;
+}
+
 function colorDotsHTML(variants, max) {
   const colors = [];
   for (const v of variants) {
