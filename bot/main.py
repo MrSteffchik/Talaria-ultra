@@ -1,8 +1,8 @@
 import os
 import re
 import logging
-from telegram import Update, Message
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
+from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import Application, MessageHandler, filters, ContextTypes, CallbackQueryHandler, CommandHandler
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -18,6 +18,10 @@ TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 SUPABASE_URL   = os.environ["SUPABASE_URL"]
 SUPABASE_KEY   = os.environ["SUPABASE_SERVICE_KEY"]
 BUCKET         = "product-photos"
+
+# Парсим список ID админов из переменной окружения
+ADMIN_IDS_STR = os.environ.get("ADMIN_IDS", "")
+ADMIN_IDS = set(int(id.strip()) for id in ADMIN_IDS_STR.split(",") if id.strip())
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -648,34 +652,47 @@ async def order_checker_loop(app: Application):
                         items_list.append(f"{idx}. {title} (Размер: {size}) — {qty} шт. | {price}")
                     
                     items_str = "\n".join(items_list)
-                    
+
                     # Форматируем доставку и оплату
                     deliv_str = "🚚 Доставка курьером" if delivery == "delivery" else "🏪 Самовывоз (Мирзо Улугбека 99)"
-                    
+
                     pay_str = "💵 Наличными / При получении"
                     if payment == "click":
                         pay_str = "📲 CLICK"
                     elif payment == "payme":
                         pay_str = "📲 PAYME"
-                        
+
+                    # Добавляем последние 4 цифры карты если есть
+                    card_last_four = order.get("card_last_four", "")
+                    card_info = f"\n💳 **Карта:** {card_last_four}" if card_last_four else ""
+
                     msg_text = (
                         f"🔔 **НОВЫЙ ЗАКАЗ #{order_id}!**\n\n"
                         f"👤 **Покупатель:** {name}\n"
                         f"📞 **Телефон:** `{phone}`\n"
                         f"📦 **Тип получения:** {deliv_str}\n"
                         f"📍 **Адрес:** {address}\n"
-                        f"💳 **Оплата:** {pay_str}\n\n"
+                        f"💳 **Оплата:** {pay_str}{card_info}\n\n"
                         f"🛍️ **Состав заказа:**\n{items_str}\n\n"
                         f"💰 **Итого к оплате:** {total:,} сум\n\n"
                         f"📌 После выдачи: **«продано»** (вся модель) или **«продано 42»** "
                         f"(только размер) на пост в группе."
                     ).replace(",", " ")
-                    
-                    # Отправляем уведомление администратору
+
+                    # Создаем inline кнопки для подтверждения/отклонения
+                    keyboard = InlineKeyboardMarkup([
+                        [
+                            InlineKeyboardButton("✅ Подтвердить", callback_data=f"order_confirm_{order_id}"),
+                            InlineKeyboardButton("❌ Отклонить", callback_data=f"order_reject_{order_id}")
+                        ]
+                    ])
+
+                    # Отправляем уведомление администратору с кнопками
                     await app.bot.send_message(
                         chat_id=admin_chat_id,
                         text=msg_text,
-                        parse_mode="Markdown"
+                        parse_mode="Markdown",
+                        reply_markup=keyboard
                     )
                     log.info("Отправлено уведомление о заказе #%s администратору", order_id)
                     
@@ -688,6 +705,145 @@ async def order_checker_loop(app: Application):
             await asyncio.sleep(30)
 
 
+def is_admin(user_id: int) -> bool:
+    """Проверяет что пользователь админ"""
+    return user_id in ADMIN_IDS
+
+
+async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик команды /start (только для админов)"""
+    user = update.message.from_user
+    user_id = user.id
+
+    if not is_admin(user_id):
+        await update.message.reply_text(
+            f"❌ Вы не админ.\n"
+            f"ID: `{user_id}`",
+            parse_mode="Markdown"
+        )
+        log.warning("Попытка доступа: ID %s", user_id)
+        return
+
+    stats_text = (
+        f"👋 **Добро пожаловать, {user.first_name}!**\n\n"
+        f"📊 **Доступные команды:**\n"
+        f"• `/stats` — статистика заказов и заработки\n\n"
+        f"🛍️ **Управление заказами:**\n"
+        f"• Нажимай кнопки **✅ Подтвердить** / **❌ Отклонить** в уведомлениях\n\n"
+        f"📝 **Управление товарами:**\n"
+        f"• Отправь фото с названием, ценой и размерами\n"
+        f"• Ответь **«продано»** чтобы снять товар\n"
+        f"• Ответь **«продано 42»** чтобы снять размер"
+    )
+    await update.message.reply_text(stats_text, parse_mode="Markdown")
+    log.info("Админ %s (%s) авторизован", user_id, user.first_name)
+
+
+async def handle_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показывает статистику заказов и заработки (только для админов)"""
+    user_id = update.message.from_user.id
+
+    if not is_admin(user_id):
+        await update.message.reply_text(
+            f"❌ Вы не админ.\n"
+            f"ID: `{user_id}`",
+            parse_mode="Markdown"
+        )
+        return
+
+    try:
+        # Получаем все подтвержденные заказы
+        res = supabase.table("orders").select("*").eq("status", "confirmed").execute()
+        confirmed_orders = res.data or []
+
+        # Получаем все отклоненные заказы
+        res = supabase.table("orders").select("*").eq("status", "rejected").execute()
+        rejected_orders = res.data or []
+
+        # Получаем все заказы со статусом pending/notified
+        res = supabase.table("orders").select("*").in_("status", ["pending", "notified"]).execute()
+        pending_orders = res.data or []
+
+        # Считаем статистику
+        confirmed_count = len(confirmed_orders)
+        confirmed_sum = sum(order.get("total_price", 0) for order in confirmed_orders)
+
+        rejected_count = len(rejected_orders)
+        pending_count = len(pending_orders)
+
+        total_orders = confirmed_count + rejected_count + pending_count
+        total_sum = confirmed_sum
+
+        stats_text = (
+            f"📊 **СТАТИСТИКА ЗАКАЗОВ**\n\n"
+            f"✅ **Подтверждено:** {confirmed_count} заказов\n"
+            f"💰 **Заработано:** {confirmed_sum:,} сум\n\n"
+            f"⏳ **В ожидании:** {pending_count} заказов\n"
+            f"❌ **Отклонено:** {rejected_count} заказов\n\n"
+            f"📈 **Всего:** {total_orders} заказов"
+        ).replace(",", " ")
+
+        await update.message.reply_text(stats_text, parse_mode="Markdown")
+        log.info("Показана статистика заказов")
+
+    except Exception as exc:
+        log.error("Ошибка при получении статистики: %s", exc)
+        await update.message.reply_text("❌ Ошибка при получении статистики")
+
+
+async def handle_order_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик callback кнопок для подтверждения/отклонения заказов"""
+    query = update.callback_query
+    await query.answer()  # Убираем "загрузку" на кнопке
+
+    callback_data = query.data
+
+    if not callback_data.startswith("order_"):
+        return
+
+    action, order_id = callback_data.rsplit("_", 1)
+    try:
+        order_id = int(order_id)
+    except ValueError:
+        await query.edit_message_text(text="❌ Ошибка: неверный ID заказа")
+        return
+
+    try:
+        # Получаем текущий заказ
+        res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
+        order = res.data
+
+        if not order:
+            await query.edit_message_text(text=f"❌ Заказ #{order_id} не найден")
+            return
+
+        if action == "order_confirm":
+            # Подтверждаем заказ
+            supabase.table("orders").update({"status": "confirmed"}).eq("id", order_id).execute()
+            new_text = (
+                f"✅ **Заказ #{order_id} подтвержден!**\n\n"
+                f"👤 **Покупатель:** {order['customer_name']}\n"
+                f"📞 **Телефон:** `{order['phone']}`\n"
+                f"💰 **Сумма:** {order['total_price']:,} сум"
+            ).replace(",", " ")
+            await query.edit_message_text(text=new_text, parse_mode="Markdown")
+            log.info("✅ Заказ #%s подтвержден", order_id)
+
+        elif action == "order_reject":
+            # Отклоняем заказ
+            supabase.table("orders").update({"status": "rejected"}).eq("id", order_id).execute()
+            new_text = (
+                f"❌ **Заказ #{order_id} отклонен**\n\n"
+                f"Статус: Отклонено"
+            )
+            await query.edit_message_text(text=new_text, parse_mode="Markdown")
+            log.info("❌ Заказ #%s отклонен", order_id)
+
+    except Exception as exc:
+        log.error("Ошибка при обработке callback заказа: %s", exc)
+        await query.edit_message_text(text=f"❌ Ошибка: {str(exc)}")
+
+
 async def post_init(application: Application) -> None:
     import asyncio
     # Запускаем фоновую задачу проверки заказов в цикле событий asyncio
@@ -698,10 +854,13 @@ async def post_init(application: Application) -> None:
 
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).post_init(post_init).build()
+    app.add_handler(CommandHandler("start", handle_start))
+    app.add_handler(CommandHandler("stats", handle_stats))
     app.add_handler(MessageHandler(filters.PHOTO, handle_message))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_availability_reply))
+    app.add_handler(CallbackQueryHandler(handle_order_callback))
     log.info("Бот запущен — каталог из фото, «продано» / «продано 42» снимает с сайта...")
-    app.run_polling(allowed_updates=["message", "channel_post"])
+    app.run_polling(allowed_updates=["message", "channel_post", "callback_query"])
 
 
 if __name__ == "__main__":

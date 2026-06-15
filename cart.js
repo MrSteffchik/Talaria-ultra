@@ -150,11 +150,18 @@ document.addEventListener("DOMContentLoaded", () => {
         <input type="tel" id="order-phone" placeholder="Телефон (+998 XX XXX XX XX)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
         <input type="text" id="order-address" placeholder="Адрес доставки (район, улица, дом, подъезд)" class="hidden w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
         <input type="text" id="order-comment" placeholder="Комментарий (время, домофон — по желанию)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
-        <select id="order-payment" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none">
+        <select id="order-payment" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" onchange="toggleCardForm()">
           <option value="cash">Оплата наличными / при получении</option>
           <option value="click">Картой через CLICK</option>
           <option value="payme">Картой через PAYME</option>
         </select>
+
+        <div id="card-form" class="hidden pt-2 border-t border-[#E5DCD3]">
+          <p class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37] mb-2">Данные карты</p>
+          <input type="text" id="order-card" placeholder="XXXX XXXX XXXX XXXX" maxlength="19" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none mb-2" inputmode="numeric" />
+          <input type="text" id="order-cardholder" placeholder="ФИО держателя (как на карте)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+          <p class="text-[8px] text-[#8C847A] mt-2">Данные карты используются только для проверки.</p>
+        </div>
       </div>
 
       <select id="order-delivery" class="hidden" aria-hidden="true">
@@ -494,6 +501,39 @@ function handleDeliveryChange() {
   renderOrderInfoSummary();
 }
 
+function toggleCardForm() {
+  const payment = document.getElementById('order-payment').value;
+  const cardForm = document.getElementById('card-form');
+  if (payment !== 'cash') {
+    cardForm.classList.remove('hidden');
+    setTimeout(() => document.getElementById('order-card')?.focus(), 100);
+  } else {
+    cardForm.classList.add('hidden');
+  }
+}
+
+function maskCardNumber(value) {
+  return value.replace(/\s/g, '').replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+}
+
+function validateCard() {
+  const payment = document.getElementById('order-payment').value;
+  if (payment === 'cash') return true;
+
+  const card = document.getElementById('order-card').value.replace(/\s/g, '');
+  const cardholder = document.getElementById('order-cardholder').value.trim();
+
+  if (!card || card.length < 16) {
+    alert('Пожалуйста, укажите корректный номер карты (16 цифр).');
+    return false;
+  }
+  if (!cardholder || cardholder.length < 3) {
+    alert('Пожалуйста, укажите ФИО держателя карты.');
+    return false;
+  }
+  return true;
+}
+
 async function submitOrder() {
   const name = document.getElementById('order-name').value.trim();
   const phone = document.getElementById('order-phone').value.trim();
@@ -509,6 +549,10 @@ async function submitOrder() {
 
   if (delivery === 'delivery' && !address) {
     alert('Пожалуйста, укажите точный адрес доставки по Ташкенту.');
+    return;
+  }
+
+  if (!validateCard()) {
     return;
   }
 
@@ -534,15 +578,19 @@ async function submitOrder() {
   }
 
   try {
+    const card = document.getElementById('order-card').value.replace(/\s/g, '');
+    const cardLastFour = card.length >= 4 ? card.slice(-4) : '';
+
     const orderData = {
       customer_name: name,
       phone: phone,
       address: addressLine,
       delivery_type: delivery,
       payment_method: payment,
+      card_last_four: payment !== 'cash' ? cardLastFour : null,
       items: cart.map(item => ({
         ...item,
-        title: cleanTitle(item.title) // Сохраняем уже чистые названия без смайлов
+        title: cleanTitle(item.title)
       })),
       total_price: finalTotal,
       status: 'pending'
@@ -569,6 +617,8 @@ async function submitOrder() {
     document.getElementById('order-name').value = '';
     document.getElementById('order-phone').value = '';
     document.getElementById('order-address').value = '';
+    document.getElementById('order-card').value = '';
+    document.getElementById('order-cardholder').value = '';
     const commentEl = document.getElementById('order-comment');
     if (commentEl) commentEl.value = '';
     switchCheckoutTab('cart');
