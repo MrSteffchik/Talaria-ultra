@@ -535,6 +535,8 @@ function validateCard() {
 }
 
 async function submitOrder() {
+  console.log('🛒 Начало оформления заказа...');
+  
   const name = document.getElementById('order-name').value.trim();
   const phone = document.getElementById('order-phone').value.trim();
   const delivery = document.getElementById('order-delivery').value;
@@ -542,17 +544,22 @@ async function submitOrder() {
   const payment = document.getElementById('order-payment').value;
   const btn = document.getElementById('btn-submit-order');
 
+  console.log('📝 Данные формы:', { name, phone, delivery, address, payment });
+
   if (!name || !phone) {
+    console.warn('⚠️ Не заполнены имя или телефон');
     alert('Пожалуйста, укажите Ваше Имя и Телефон для связи.');
     return;
   }
 
   if (delivery === 'delivery' && !address) {
+    console.warn('⚠️ Не указан адрес доставки');
     alert('Пожалуйста, укажите точный адрес доставки по Ташкенту.');
     return;
   }
 
   if (!validateCard()) {
+    console.warn('⚠️ Ошибка валидации карты');
     return;
   }
 
@@ -596,7 +603,13 @@ async function submitOrder() {
       status: 'pending'
     };
 
+    // Проверяем, что Supabase доступен
+    if (typeof supabase === 'undefined') {
+      throw new Error('Библиотека Supabase не загружена. Проверьте подключение скрипта.');
+    }
+
     // Создаем клиент Supabase напрямую из конфига
+    console.log('📦 Отправка заказа в Supabase...', orderData);
     const _sbClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
     const { data, error } = await _sbClient
       .from('orders')
@@ -604,7 +617,12 @@ async function submitOrder() {
       .select('id')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Ошибка Supabase:', error);
+      throw error;
+    }
+
+    console.log('✅ Заказ успешно создан:', data);
 
     const orderId = data.id;
 
@@ -625,8 +643,9 @@ async function submitOrder() {
 
     openPaymentModal(orderId, name, finalTotal, payment);
   } catch (e) {
-    console.error(e);
-    alert('Произошла ошибка при отправке заказа. Пожалуйста, свяжитесь с нами напрямую по телефону.');
+    console.error('❌ Критическая ошибка при оформлении заказа:', e);
+    const errorMsg = e.message || 'Неизвестная ошибка';
+    alert(`⚠️ Ошибка при отправке заказа:\n\n${errorMsg}\n\nПожалуйста, свяжитесь с нами напрямую по телефону.`);
   } finally {
     btn.disabled = false;
     btn.textContent = 'ПОДТВЕРДИТЬ ЗАКАЗ';
