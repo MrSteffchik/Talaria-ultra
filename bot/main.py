@@ -666,12 +666,20 @@ async def order_checker_loop(app: Application):
                     card_last_four = order.get("card_last_four", "")
                     card_info = f"\n💳 **Карта:** {card_last_four}" if card_last_four else ""
 
+                    # Генерируем ссылку на Яндекс.Карты для адреса
+                    yandex_maps_link = ""
+                    if delivery == "delivery" and address and address != "Не указан":
+                        # Кодируем адрес для URL
+                        import urllib.parse
+                        encoded_address = urllib.parse.quote(f"Ташкент {address}")
+                        yandex_maps_link = f"\n🗺️ **Адрес на карте:** [Открыть в Яндекс.Картах](https://yandex.uz/maps/?text={encoded_address})"
+
                     msg_text = (
                         f"🔔 **НОВЫЙ ЗАКАЗ #{order_id}!**\n\n"
                         f"👤 **Покупатель:** {name}\n"
-                        f"📞 **Телефон:** `{phone}`\n"
+                        f"📞 **Телефон:** [`{phone}`](tel:{phone.replace(' ', '')})\n"
                         f"📦 **Тип получения:** {deliv_str}\n"
-                        f"📍 **Адрес:** {address}\n"
+                        f"📍 **Адрес:** {address}{yandex_maps_link}\n"
                         f"💳 **Оплата:** {pay_str}{card_info}\n\n"
                         f"🛍️ **Состав заказа:**\n{items_str}\n\n"
                         f"💰 **Итого к оплате:** {total:,} сум\n\n"
@@ -707,7 +715,10 @@ async def order_checker_loop(app: Application):
 
 def is_admin(user_id: int) -> bool:
     """Проверяет что пользователь админ"""
-    return user_id in ADMIN_IDS
+    log.info("Проверка админа: user_id=%s, ADMIN_IDS=%s", user_id, ADMIN_IDS)
+    result = user_id in ADMIN_IDS
+    log.info("Результат: %s", result)
+    return result
 
 
 async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -805,7 +816,7 @@ async def handle_order_callback(update: Update, context: ContextTypes.DEFAULT_TY
     try:
         order_id = int(order_id)
     except ValueError:
-        await query.edit_message_text(text="❌ Ошибка: неверный ID заказа")
+        await query.answer("❌ Ошибка: неверный ID заказа", show_alert=True)
         return
 
     try:
@@ -814,7 +825,12 @@ async def handle_order_callback(update: Update, context: ContextTypes.DEFAULT_TY
         order = res.data
 
         if not order:
-            await query.edit_message_text(text=f"❌ Заказ #{order_id} не найден")
+            await query.answer("❌ Заказ не найден", show_alert=True)
+            return
+
+        # Проверяем, не обработан ли уже заказ
+        if order.get("status") in ["confirmed", "rejected"]:
+            await query.answer("⚠️ Этот заказ уже обработан", show_alert=True)
             return
 
         if action == "order_confirm":
@@ -823,10 +839,16 @@ async def handle_order_callback(update: Update, context: ContextTypes.DEFAULT_TY
             new_text = (
                 f"✅ **Заказ #{order_id} подтвержден!**\n\n"
                 f"👤 **Покупатель:** {order['customer_name']}\n"
-                f"📞 **Телефон:** `{order['phone']}`\n"
-                f"💰 **Сумма:** {order['total_price']:,} сум"
-            ).replace(",", " ")
-            await query.edit_message_text(text=new_text, parse_mode="Markdown")
+                f"📞 **Телефон:** [`{order['phone']}`](tel:{order['phone'].replace(' ', '')})\n"
+                f"💰 **Сумма:** {order['total_price']:,} сум".replace(",", " ")
+            )
+            try:
+                await query.edit_message_text(text=new_text, parse_mode="Markdown")
+            except Exception as e:
+                if "message is not modified" in str(e).lower():
+                    log.info("Сообщение уже изменено, пропускаем")
+                else:
+                    raise
             log.info("✅ Заказ #%s подтвержден", order_id)
 
         elif action == "order_reject":
@@ -836,12 +858,18 @@ async def handle_order_callback(update: Update, context: ContextTypes.DEFAULT_TY
                 f"❌ **Заказ #{order_id} отклонен**\n\n"
                 f"Статус: Отклонено"
             )
-            await query.edit_message_text(text=new_text, parse_mode="Markdown")
+            try:
+                await query.edit_message_text(text=new_text, parse_mode="Markdown")
+            except Exception as e:
+                if "message is not modified" in str(e).lower():
+                    log.info("Сообщение уже изменено, пропускаем")
+                else:
+                    raise
             log.info("❌ Заказ #%s отклонен", order_id)
 
     except Exception as exc:
         log.error("Ошибка при обработке callback заказа: %s", exc)
-        await query.edit_message_text(text=f"❌ Ошибка: {str(exc)}")
+        await query.answer(f"❌ Ошибка: {str(exc)}", show_alert=True)
 
 
 async def post_init(application: Application) -> None:
