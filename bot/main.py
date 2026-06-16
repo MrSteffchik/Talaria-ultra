@@ -21,7 +21,13 @@ BUCKET         = "product-photos"
 
 # Парсим список ID админов из переменной окружения
 ADMIN_IDS_STR = os.environ.get("ADMIN_IDS", "")
-ADMIN_IDS = set(int(id.strip()) for id in ADMIN_IDS_STR.split(",") if id.strip())
+log.info("ADMIN_IDS_STR из окружения: '%s'", ADMIN_IDS_STR)
+try:
+    ADMIN_IDS = set(int(id.strip()) for id in ADMIN_IDS_STR.split(",") if id.strip())
+    log.info("ADMIN_IDS распарсено: %s", ADMIN_IDS)
+except Exception as e:
+    log.error("Ошибка парсинга ADMIN_IDS: %s", e)
+    ADMIN_IDS = set()
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -716,9 +722,12 @@ async def order_checker_loop(app: Application):
 
 def is_admin(user_id: int) -> bool:
     """Проверяет что пользователь админ"""
-    log.info("Проверка админа: user_id=%s, ADMIN_IDS=%s", user_id, ADMIN_IDS)
+    log.info("=== ПРОВЕРКА АДМИНА ===")
+    log.info("user_id (тип %s): %s", type(user_id).__name__, user_id)
+    log.info("ADMIN_IDS (тип %s): %s", type(ADMIN_IDS).__name__, ADMIN_IDS)
     result = user_id in ADMIN_IDS
-    log.info("Результат: %s", result)
+    log.info("Результат проверки: %s", result)
+    log.info("=======================")
     return result
 
 
