@@ -1,0 +1,34 @@
+# Robots.txt для Talaria.uz
+# Женская обувь больших размеров в Ташкенте
+
+User-agent: *
+Allow: /
+Allow: /catalog.html
+Allow: /about.html
+Allow: /contacts.html
+Allow: /product.html
+
+# Запрещаем индексацию служебных файлов
+Disallow: /bot/
+Disallow: /*.json$
+
+# Sitemap
+Sitemap: https://talaria.uz/sitemap.xml
+
+# Google Bot
+User-agent: Googlebot
+Allow: /
+Allow: /catalog.html
+Allow: /about.html
+Allow: /contacts.html
+Allow: /product.html
+
+# Yandex Bot
+User-agent: Yandex
+Allow: /
+Allow: /catalog.html
+Allow: /about.html
+Allow: /contacts.html
+Allow: /product.html
+Disallow: /bot/
+Sitemap: https://talaria.uz/sitemap.xml

@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Talaria — Детали товара</title>
     
+    <!-- SEO Meta Tags (динамические) -->
+    <meta name="description" content="Женская обувь больших размеров в Ташкенте. Доставка с примеркой, оплата при получении." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://talaria.uz/product.html" />
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="product" />
+    <meta property="og:url" content="https://talaria.uz/product.html" />
+    <meta property="og:locale" content="ru_RU" />
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -348,6 +358,37 @@
 
         // Document Title
         document.title = `Talaria — ${cleanedTitle}`;
+        
+        // SEO Meta Tags Update
+        document.querySelector('meta[name="description"]').content = `Купить ${cleanedTitle} в Talaria. Размеры: ${cleanedSizes || 'уточняйте'}. Доставка с примеркой по Ташкенту.`;
+        document.querySelector('link[rel="canonical"]').href = `https://talaria.uz/product.html?id=${p.id}`;
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (!ogTitle) {
+          const newMeta = document.createElement('meta');
+          newMeta.setAttribute('property', 'og:title');
+          newMeta.content = `${cleanedTitle} — Talaria`;
+          document.head.appendChild(newMeta);
+        } else {
+          ogTitle.content = `${cleanedTitle} — Talaria`;
+        }
+        const ogDesc = document.querySelector('meta[property="og:description"]');
+        if (!ogDesc) {
+          const newMeta2 = document.createElement('meta');
+          newMeta2.setAttribute('property', 'og:description');
+          newMeta2.content = `Купить женскую обувь больших размеров ${cleanedTitle}. Размеры: ${cleanedSizes || 'уточняйте'}. Доставка с примеркой по Ташкенту.`;
+          document.head.appendChild(newMeta2);
+        } else {
+          ogDesc.content = `Купить женскую обувь больших размеров ${cleanedTitle}. Размеры: ${cleanedSizes || 'уточняйте'}. Доставка с примеркой по Ташкенту.`;
+        }
+        const ogImg = document.querySelector('meta[property="og:image"]');
+        if (!ogImg) {
+          const newMeta3 = document.createElement('meta');
+          newMeta3.setAttribute('property', 'og:image');
+          newMeta3.content = photos[0];
+          document.head.appendChild(newMeta3);
+        } else {
+          ogImg.content = photos[0];
+        }
         
         // Initial Cart Badge Load
         updateCartBadge();
