@@ -669,10 +669,11 @@ async def order_checker_loop(app: Application):
                     # Генерируем ссылку на Яндекс.Карты для адреса
                     yandex_maps_link = ""
                     if delivery == "delivery" and address and address != "Не указан":
-                        # Кодируем адрес для URL
+                        # Кодируем адрес для URL (добавляем Ташкент если нет)
                         import urllib.parse
-                        encoded_address = urllib.parse.quote(f"Ташкент {address}")
-                        yandex_maps_link = f"\n🗺️ **Адрес на карте:** [Открыть в Яндекс.Картах](https://yandex.uz/maps/?text={encoded_address})"
+                        address_for_map = address if "ташкент" in address.lower() else f"Ташкент {address}"
+                        encoded_address = urllib.parse.quote(address_for_map)
+                        yandex_maps_link = f"\n\n🗺️ [📍 Открыть адрес на Яндекс.Картах](https://yandex.uz/maps/?text={encoded_address})"
 
                     msg_text = (
                         f"🔔 **НОВЫЙ ЗАКАЗ #{order_id}!**\n\n"
@@ -763,6 +764,8 @@ async def handle_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
+        from datetime import datetime, timedelta
+        
         # Получаем все подтвержденные заказы
         res = supabase.table("orders").select("*").eq("status", "confirmed").execute()
         confirmed_orders = res.data or []
@@ -775,23 +778,51 @@ async def handle_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = supabase.table("orders").select("*").in_("status", ["pending", "notified"]).execute()
         pending_orders = res.data or []
 
-        # Считаем статистику
+        # Считаем общую статистику
         confirmed_count = len(confirmed_orders)
         confirmed_sum = sum(order.get("total_price", 0) for order in confirmed_orders)
 
         rejected_count = len(rejected_orders)
         pending_count = len(pending_orders)
 
+        # Статистика за СЕГОДНЯ
+        today = datetime.now().strftime("%Y-%m-%d")
+        today_orders = [o for o in confirmed_orders if o.get("created_at", "").startswith(today)]
+        today_count = len(today_orders)
+        today_sum = sum(o.get("total_price", 0) for o in today_orders)
+
+        # Разделение по типу доставки (за все время)
+        pickup_orders = [o for o in confirmed_orders if o.get("delivery_type") == "pickup"]
+        delivery_orders = [o for o in confirmed_orders if o.get("delivery_type") == "delivery"]
+        
+        pickup_count = len(pickup_orders)
+        delivery_count = len(delivery_orders)
+        pickup_sum = sum(o.get("total_price", 0) for o in pickup_orders)
+        delivery_sum = sum(o.get("total_price", 0) for o in delivery_orders)
+
+        # Разделение по типу доставки за СЕГОДНЯ
+        today_pickup = [o for o in today_orders if o.get("delivery_type") == "pickup"]
+        today_delivery = [o for o in today_orders if o.get("delivery_type") == "delivery"]
+        today_pickup_count = len(today_pickup)
+        today_delivery_count = len(today_delivery)
+
         total_orders = confirmed_count + rejected_count + pending_count
-        total_sum = confirmed_sum
 
         stats_text = (
             f"📊 **СТАТИСТИКА ЗАКАЗОВ**\n\n"
-            f"✅ **Подтверждено:** {confirmed_count} заказов\n"
-            f"💰 **Заработано:** {confirmed_sum:,} сум\n\n"
-            f"⏳ **В ожидании:** {pending_count} заказов\n"
-            f"❌ **Отклонено:** {rejected_count} заказов\n\n"
-            f"📈 **Всего:** {total_orders} заказов"
+            f"📅 **ЗА СЕГОДНЯ** ({today}):\n"
+            f"✅ Подтверждено: {today_count} заказов\n"
+            f"   • Самовывоз: {today_pickup_count}\n"
+            f"   • Доставка: {today_delivery_count}\n"
+            f"💰 Заработано: {today_sum:,} сум\n\n"
+            f"📈 **ВСЕГО**:\n"
+            f"✅ Подтверждено: {confirmed_count} заказов\n"
+            f"   • Самовывоз: {pickup_count} ({pickup_sum:,} сум)\n"
+            f"   • Доставка: {delivery_count} ({delivery_sum:,} сум)\n"
+            f"💰 Заработано: {confirmed_sum:,} сум\n\n"
+            f"⏳ В ожидании: {pending_count}\n"
+            f"❌ Отклонено: {rejected_count}\n\n"
+            f"📌 **Всего заказов:** {total_orders}"
         ).replace(",", " ")
 
         await update.message.reply_text(stats_text, parse_mode="Markdown")
