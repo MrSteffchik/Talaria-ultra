@@ -5,8 +5,11 @@ const CONFIG = {
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6aG1nYmpqYnZjZGhwanNuamxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5OTA5MTcsImV4cCI6MjA5MzU2NjkxN30.1QhYCGMVDWAs7l7TpFYPcAAzDl63GsU-V2oVudl4XD0',
 
     // Реквизиты для оплаты (Click / Payme)
-    PAYMENT_CARD: '8600000000000000', // Номер Uzcard/Humo карты для оплаты
-    CARD_HOLDER: 'ИМЯ ВЛАДЕЛЬЦА КАРТЫ', // Имя получателя перевода
+    PAYMENT_CARD: '9860170114729453', // Номер Uzcard/Humo карты для оплаты
+    CARD_HOLDER: 'ZEMFIRA KONTYUKOVA', // Имя получателя перевода
+
+    // Телефон для связи после оплаты
+    SUPPORT_PHONE: '+998 90 825 73 37',
 
     // Доставка и самовывоз (отображается при оформлении заказа)
     DELIVERY: {

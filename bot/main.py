@@ -905,6 +905,93 @@ async def handle_clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+async def handle_create(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Ручное добавление продажи (только для админов)
+    
+    Использование:
+    /create 500000 — 1 модель продана за 500 000 сум
+    /create 2 500000 — 2 модели проданы за 500 000 сум (общая сумма)
+    """
+    user_id = update.message.from_user.id
+
+    if not is_admin(user_id):
+        await update.message.reply_text(
+            f"❌ Вы не админ.\n"
+            f"ID: `{user_id}`",
+            parse_mode="Markdown"
+        )
+        return
+
+    args = context.args
+    
+    if len(args) < 1:
+        await update.message.reply_text(
+            "📝 **Как использовать:**\n\n"
+            "`/create 500000` — 1 модель за 500 000 сум\n"
+            "`/create 2 500000` — 2 модели за 500 000 сум\n\n"
+            "Первое число — количество моделей (не обязательно, по умолчанию 1)\n"
+            "Второе число — общая сумма продажи в сумах",
+            parse_mode="Markdown"
+        )
+        return
+
+    try:
+        # Парсим аргументы
+        if len(args) == 1:
+            quantity = 1
+            total_amount = int(args[0])
+        else:
+            quantity = int(args[0])
+            total_amount = int(args[1])
+
+        # Создаём запись о продаже
+        sale_data = {
+            "customer_name": "Ручной ввод (мама)",
+            "phone": "+998 90 825 73 37",
+            "address": "Продано в шоуруме",
+            "delivery_type": "pickup",
+            "payment_method": "cash",
+            "card_last_four": None,
+            "items": [{"title": "Продажа в магазине", "quantity": quantity, "price": f"{total_amount:,} сум".replace(",", " ")}],
+            "total_price": total_amount,
+            "status": "confirmed",
+            "manual_entry": True
+        }
+
+        res = supabase.table("orders").insert(sale_data).select("id").execute()
+        
+        if res.data:
+            order_id = res.data[0]["id"]
+            price_per_item = total_amount // quantity if quantity > 0 else 0
+            
+            await update.message.reply_text(
+                f"✅ **Продажа добавлена!**\n\n"
+                f"📦 Количество: {quantity} шт.\n"
+                f"💰 Общая сумма: {total_amount:,} сум\n"
+                f"💵 За единицу: {price_per_item:,} сум\n"
+                f"📝 ID заказа: #{order_id}",
+                parse_mode="Markdown"
+            )
+            log.info("Добавлена ручная продажа: %d шт. на %d сум", quantity, total_amount)
+        else:
+            await update.message.reply_text("❌ Ошибка: не удалось добавить продажу")
+        
+    except ValueError:
+        await update.message.reply_text(
+            "❌ **Ошибка:** введите числа корректно\n\n"
+            "Пример:\n"
+            "`/create 500000`\n"
+            "`/create 2 500000`",
+            parse_mode="Markdown"
+        )
+    except Exception as exc:
+        log.error("Ошибка при добавлении ручной продажи: %s", exc)
+        await update.message.reply_text(
+            f"❌ **Ошибка:** `{str(exc)}`",
+            parse_mode="Markdown"
+        )
+
+
 async def handle_order_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик callback кнопок для подтверждения/отклонения заказов"""
     query = update.callback_query
@@ -988,6 +1075,7 @@ def main():
     app.add_handler(CommandHandler("start", handle_start))
     app.add_handler(CommandHandler("stats", handle_stats))
     app.add_handler(CommandHandler("clear", handle_clear))
+    app.add_handler(CommandHandler("create", handle_create))
     app.add_handler(MessageHandler(filters.PHOTO, handle_message))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_availability_reply))
     app.add_handler(CallbackQueryHandler(handle_order_callback))

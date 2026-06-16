@@ -216,12 +216,19 @@ document.addEventListener("DOMContentLoaded", () => {
       <div id="payment-details-card" class="bg-white border border-[#E5DCD3] p-5 mb-6 text-left space-y-3">
         <p class="text-xs font-semibold uppercase tracking-wider text-[#D4AF37] border-b border-[#FAF6F0] pb-2">Инструкция к оплате:</p>
         <div class="text-xs text-[#5C544A] space-y-1 leading-relaxed">
-          <p><strong>Получатель:</strong> <span id="payment-card-holder">Владелец Карты</span></p>
-          <p><strong>Номер карты:</strong> <span id="payment-card-number" class="font-bold tracking-wider text-[#1A1A1A]">8600 ---- ---- ----</span></p>
+          <p><strong>Получатель:</strong> <span id="payment-card-holder">ZEMFIRA KONTYUKOVA</span></p>
+          <p><strong>Номер карты:</strong> <span id="payment-card-number" class="font-bold tracking-wider text-[#1A1A1A]">9860 1701 1472 9453</span></p>
           <p><strong>К оплате:</strong> <span id="success-total-price" class="font-bold text-red-600">0 сум</span></p>
         </div>
       </div>
 
+      <div class="bg-[#1A1A1A] text-[#FAF6F0] p-4 mb-6 border-2 border-[#D4AF37]">
+        <p class="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold mb-2">⚠️ ВАЖНО:</p>
+        <p class="text-sm font-bold">ПОСЛЕ ОПЛАТЫ ПОЗВОНИТЕ:</p>
+        <a href="tel:+998908257337" class="text-xl font-bold text-[#D4AF37] block mt-1">+998 90 825 73 37</a>
+        <p class="text-[9px] text-[#8C847A] mt-2">Для подтверждения заказа менеджером</p>
+      </div>
+      
       <div class="space-y-2">
         <a id="btn-click-pay" href="#" target="_blank" class="hidden w-full bg-blue-500 hover:bg-blue-600 text-white text-xs tracking-wider uppercase font-semibold py-3 transition flex items-center justify-center gap-2">
           📲 ОПЛАТИТЬ ЧЕРЕЗ CLICK
@@ -655,8 +662,8 @@ async function submitOrder() {
 function openPaymentModal(orderId, name, total, payment) {
   document.getElementById('success-order-id').textContent = orderId;
   document.getElementById('success-total-price').textContent = formatSum(total);
-  document.getElementById('payment-card-number').textContent = CONFIG.PAYMENT_CARD || 'Спросите у менеджера';
-  document.getElementById('payment-card-holder').textContent = CONFIG.CARD_HOLDER || 'Владелец Карты';
+  document.getElementById('payment-card-number').textContent = '9860 1701 1472 9453';
+  document.getElementById('payment-card-holder').textContent = 'ZEMFIRA KONTYUKOVA';
 
   const btnClick = document.getElementById('btn-click-pay');
   const btnPayme = document.getElementById('btn-payme-pay');
@@ -670,10 +677,50 @@ function openPaymentModal(orderId, name, total, payment) {
     cardDetailsCard.classList.remove('hidden');
     btnClick.href = `https://click.uz/clickme?card=${CONFIG.PAYMENT_CARD.replace(/\s/g, '')}&amount=${total}`;
     btnClick.classList.remove('hidden');
+    // Блокировка кнопки на 5 секунд
+    btnClick.disabled = true;
+    btnClick.style.opacity = '0.5';
+    btnClick.style.cursor = 'not-allowed';
+    let countdown = 5;
+    const originalText = btnClick.textContent;
+    btnClick.textContent = `⏳ ОЖИДАНИЕ (${countdown} сек)`;
+    
+    const timer = setInterval(() => {
+      countdown--;
+      if (countdown > 0) {
+        btnClick.textContent = `⏳ ОЖИДАНИЕ (${countdown} сек)`;
+      } else {
+        clearInterval(timer);
+        btnClick.disabled = false;
+        btnClick.style.opacity = '1';
+        btnClick.style.cursor = 'pointer';
+        btnClick.textContent = originalText;
+      }
+    }, 1000);
   } else if (payment === 'payme' && CONFIG.PAYMENT_CARD) {
     cardDetailsCard.classList.remove('hidden');
     btnPayme.href = `https://payme.uz/card/${CONFIG.PAYMENT_CARD.replace(/\s/g, '')}/${total}`;
     btnPayme.classList.remove('hidden');
+    // Блокировка кнопки на 5 секунд
+    btnPayme.disabled = true;
+    btnPayme.style.opacity = '0.5';
+    btnPayme.style.cursor = 'not-allowed';
+    let countdown = 5;
+    const originalText = btnPayme.textContent;
+    btnPayme.textContent = `⏳ ОЖИДАНИЕ (${countdown} сек)`;
+    
+    const timer = setInterval(() => {
+      countdown--;
+      if (countdown > 0) {
+        btnPayme.textContent = `⏳ ОЖИДАНИЕ (${countdown} сек)`;
+      } else {
+        clearInterval(timer);
+        btnPayme.disabled = false;
+        btnPayme.style.opacity = '1';
+        btnPayme.style.cursor = 'pointer';
+        btnPayme.textContent = originalText;
+      }
+    }, 1000);
   }
 
   document.getElementById('payment-modal').classList.remove('hidden');
