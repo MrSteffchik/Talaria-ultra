@@ -860,6 +860,51 @@ async def handle_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Ошибка при получении статистики")
 
 
+async def handle_clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Очищает всю историю заказов (только для админов)"""
+    user_id = update.message.from_user.id
+
+    if not is_admin(user_id):
+        await update.message.reply_text(
+            f"❌ Вы не админ.\n"
+            f"ID: `{user_id}`",
+            parse_mode="Markdown"
+        )
+        return
+
+    # Проверяем, есть ли аргументы (подтверждение)
+    args = context.args
+    if not args or args[0] != "confirm":
+        # Показываем предупреждение
+        await update.message.reply_text(
+            "⚠️ **ВНИМАНИЕ! Это действие необратимо!**\n\n"
+            "Вы действительно хотите удалить **ВСЮ историю заказов**?\n\n"
+            "Для подтверждения введите:\n"
+            "`/clear confirm`",
+            parse_mode="Markdown"
+        )
+        return
+
+    try:
+        # Удаляем все заказы
+        res = supabase.table("orders").delete().neq("id", 0).execute()
+        
+        log.info("Очищено заказов: %s", len(res.data) if res.data else "все")
+        
+        await update.message.reply_text(
+            "✅ **История заказов полностью очищена!**\n\n"
+            "Все заказы удалены из базы данных.",
+            parse_mode="Markdown"
+        )
+        
+    except Exception as exc:
+        log.error("Ошибка при очистке истории: %s", exc)
+        await update.message.reply_text(
+            f"❌ **Ошибка при очистке:**\n`{str(exc)}`",
+            parse_mode="Markdown"
+        )
+
+
 async def handle_order_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик callback кнопок для подтверждения/отклонения заказов"""
     query = update.callback_query
@@ -942,6 +987,7 @@ def main():
     app = Application.builder().token(TELEGRAM_TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", handle_start))
     app.add_handler(CommandHandler("stats", handle_stats))
+    app.add_handler(CommandHandler("clear", handle_clear))
     app.add_handler(MessageHandler(filters.PHOTO, handle_message))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_availability_reply))
     app.add_handler(CallbackQueryHandler(handle_order_callback))
