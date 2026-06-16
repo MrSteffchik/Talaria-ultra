@@ -146,8 +146,8 @@
               ДОБАВИТЬ В КОРЗИНУ
             </button>
             
-            <a href="product.html?id=${productData.id}" class="w-full border border-[#229ED9] text-[#229ED9] hover:bg-[#229ED9]/10 text-xs py-3.5 tracking-[0.15em] uppercase font-semibold transition flex items-center justify-center gap-2">
-              Ссылка на товар
+            <a id="tg-order" href="#" target="_blank" rel="noopener noreferrer" class="w-full border border-[#229ED9] text-[#229ED9] hover:bg-[#229ED9]/10 text-xs py-3.5 tracking-[0.15em] uppercase font-semibold transition flex items-center justify-center gap-2">
+              Спросить в Telegram
             </a>
             
             <button onclick="shareProduct()" class="w-full border border-[#E5DCD3] text-[#8C847A] hover:text-[#1A1A1A] hover:border-[#1A1A1A] text-xs py-3.5 tracking-[0.15em] uppercase font-semibold transition flex items-center justify-center gap-2">
@@ -337,8 +337,11 @@
           document.getElementById('desc-block').classList.add('hidden');
         }
 
-        // Ссылка на товар
-        document.getElementById('tg-order').href = `product.html?id=${productData?.id || p.id}`;
+        // Direct Telegram Order Link
+        document.getElementById('tg-order').href = buildTelegramAskUrl({
+          ...p,
+          id: productData?.id || p.id,
+        });
 
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('product').classList.remove('hidden');
