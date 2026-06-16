@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <p class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37] mb-2">Способ получения</p>
         <div class="grid grid-cols-1 gap-2">
           <button type="button" id="btn-delivery-pickup" onclick="selectDeliveryType('pickup')" class="delivery-option text-left p-3 border border-[#E5DCD3] bg-white hover:border-[#D4AF37] transition">
-            <span class="block text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">Самовывоз из шоурума</span>
+            <span class="block text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">Самовывоз из магазина</span>
             <span class="block text-[10px] text-[#8C847A] mt-1">Бесплатно</span>
           </button>
           <button type="button" id="btn-delivery-courier" onclick="selectDeliveryType('delivery')" class="delivery-option text-left p-3 border border-[#E5DCD3] bg-white hover:border-[#D4AF37] transition">
@@ -144,14 +144,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div id="delivery-info-panel" class="bg-[#EFE9DF]/50 border border-[#E5DCD3] p-3 text-[11px] text-[#5C544A] leading-relaxed"></div>
 
-      <div class="space-y-3">
-        <p class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37]">Контактные данные</p>
-        <input type="text" id="order-name" placeholder="Ваше имя" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
-        <input type="tel" id="order-phone" placeholder="Телефон (+998 XX XXX XX XX)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
-        <input type="text" id="order-address" placeholder="Адрес доставки (район, улица, дом, подъезд)" class="hidden w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
-        <input type="text" id="order-comment" placeholder="Комментарий (время, домофон — по желанию)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+      <!-- Блок оплаты (показывается только для доставки) -->
+      <div id="payment-section" class="space-y-3">
+        <p class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37]">Способ оплаты</p>
         <select id="order-payment" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" onchange="toggleCardForm()">
-          <option value="cash">Оплата наличными / при получении</option>
+          <option value="cash">Оплата наличными</option>
           <option value="click">Картой через CLICK</option>
           <option value="payme">Картой через PAYME</option>
         </select>
@@ -162,6 +159,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <input type="text" id="order-cardholder" placeholder="ФИО держателя (как на карте)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
           <p class="text-[8px] text-[#8C847A] mt-2">Данные карты используются только для проверки.</p>
         </div>
+      </div>
+
+      <div class="space-y-3">
+        <p class="text-[10px] tracking-widest uppercase font-bold text-[#D4AF37]">Контактные данные</p>
+        <input type="text" id="order-name" placeholder="Ваше имя" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+        <input type="tel" id="order-phone" placeholder="Телефон (+998 XX XXX XX XX)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+        <input type="text" id="order-address" placeholder="Адрес доставки (район, улица, дом, подъезд)" class="hidden w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
+        <input type="text" id="order-comment" placeholder="Комментарий (время, домофон — по желанию)" class="w-full bg-[#FAF6F0] text-xs px-3 py-2.5 border border-[#E5DCD3] focus:border-[#D4AF37] focus:outline-none" />
       </div>
 
       <select id="order-delivery" class="hidden" aria-hidden="true">
@@ -435,6 +440,7 @@ function updateDeliveryUI() {
   const type = document.getElementById('order-delivery')?.value || 'pickup';
   const panel = document.getElementById('delivery-info-panel');
   const addressInput = document.getElementById('order-address');
+  const paymentSection = document.getElementById('payment-section');
   const btnPickup = document.getElementById('btn-delivery-pickup');
   const btnCourier = document.getElementById('btn-delivery-courier');
   const cfg = getDeliveryConfig();
@@ -450,6 +456,7 @@ function updateDeliveryUI() {
 
   if (type === 'delivery') {
     if (addressInput) addressInput.classList.remove('hidden');
+    if (paymentSection) paymentSection.classList.remove('hidden');
     if (panel) {
       panel.innerHTML = `
         <p class="font-bold uppercase tracking-wider text-[#1A1A1A] mb-2">${cfg.courierTitle}</p>
@@ -459,13 +466,14 @@ function updateDeliveryUI() {
     }
   } else {
     if (addressInput) addressInput.classList.add('hidden');
+    if (paymentSection) paymentSection.classList.add('hidden');
     if (panel) {
       panel.innerHTML = `
-        <p class="font-bold uppercase tracking-wider text-[#1A1A1A] mb-2">Самовывоз из шоурума Talaria</p>
+        <p class="font-bold uppercase tracking-wider text-[#1A1A1A] mb-2">Самовывоз из магазина Talaria</p>
         <p><strong>Адрес:</strong> ${cfg.pickupAddress}</p>
         <p class="mt-1"><strong>Режим работы:</strong> ${cfg.pickupHours}</p>
         <p class="mt-1"><strong>Телефон:</strong> <a href="tel:${cfg.pickupPhone.replace(/\s/g, '')}" class="text-[#D4AF37] underline">${cfg.pickupPhone}</a></p>
-        <p class="mt-2 text-[#8C847A]">Доставка не оплачивается. Обувь можно примерить в шоуруме.</p>`;
+        <p class="mt-2 text-[#8C847A]">Доставка не оплачивается. Обувь можно примерить в магазине.</p>`;
     }
   }
 }
@@ -548,7 +556,13 @@ async function submitOrder() {
   const phone = document.getElementById('order-phone').value.trim();
   const delivery = document.getElementById('order-delivery').value;
   const address = document.getElementById('order-address').value.trim();
-  const payment = document.getElementById('order-payment').value;
+  
+  // Для самовывоза всегда наличные, для доставки - выбор пользователя
+  let payment = 'cash';
+  if (delivery === 'delivery') {
+    payment = document.getElementById('order-payment')?.value || 'cash';
+  }
+  
   const btn = document.getElementById('btn-submit-order');
 
   console.log('📝 Данные формы:', { name, phone, delivery, address, payment });
