@@ -701,9 +701,7 @@ async def order_checker_loop(app: Application):
                         f"📍 **Адрес:** {address}{yandex_maps_link}\n"
                         f"💳 **Оплата:** {pay_str}{card_info}\n\n"
                         f"🛍️ **Состав заказа:**\n{items_str}\n\n"
-                        f"💰 **Итого к оплате:** {total:,} сум\n\n"
-                        f"📌 После выдачи: **«продано»** (вся модель) или **«продано 42»** "
-                        f"(только размер) на пост в группе."
+                        f"💰 **Итого к оплате:** {total:,} сум"
                     ).replace(",", " ")
 
                     # Создаем inline кнопки для подтверждения/отклонения
@@ -958,10 +956,10 @@ async def handle_create(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "manual_entry": True
         }
 
-        res = supabase.table("orders").insert(sale_data).select("id").execute()
+        result = supabase.table("orders").insert(sale_data).execute()
         
-        if res.data:
-            order_id = res.data[0]["id"]
+        if result.data:
+            order_id = result.data[0]["id"]
             price_per_item = total_amount // quantity if quantity > 0 else 0
             
             await update.message.reply_text(
