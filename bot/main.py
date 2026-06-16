@@ -19,6 +19,10 @@ SUPABASE_URL   = os.environ["SUPABASE_URL"]
 SUPABASE_KEY   = os.environ["SUPABASE_SERVICE_KEY"]
 BUCKET         = "product-photos"
 
+# Процент комиссии (можно изменить в .env, по умолчанию 10%)
+COMMISSION_PERCENT = int(os.environ.get("COMMISSION_PERCENT", "10"))
+log.info("Процент комиссии: %s%%", COMMISSION_PERCENT)
+
 # Парсим список ID админов из переменной окружения
 ADMIN_IDS_STR = os.environ.get("ADMIN_IDS", "")
 log.info("ADMIN_IDS_STR из окружения: '%s'", ADMIN_IDS_STR)
@@ -825,18 +829,24 @@ async def handle_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         total_orders = confirmed_count + rejected_count + pending_count
 
+        # Считаем твою комиссию
+        commission_today = int(today_sum * COMMISSION_PERCENT / 100)
+        commission_total = int(confirmed_sum * COMMISSION_PERCENT / 100)
+
         stats_text = (
             f"📊 **СТАТИСТИКА ЗАКАЗОВ**\n\n"
             f"📅 **ЗА СЕГОДНЯ** ({today}):\n"
             f"✅ Подтверждено: {today_count} заказов\n"
             f"   • Самовывоз: {today_pickup_count}\n"
             f"   • Доставка: {today_delivery_count}\n"
-            f"💰 Заработано: {today_sum:,} сум\n\n"
+            f"💰 Выручка: {today_sum:,} сум\n"
+            f"💵 **Твой заработок ({COMMISSION_PERCENT}%): {commission_today:,} сум**\n\n"
             f"📈 **ВСЕГО**:\n"
             f"✅ Подтверждено: {confirmed_count} заказов\n"
             f"   • Самовывоз: {pickup_count} ({pickup_sum:,} сум)\n"
             f"   • Доставка: {delivery_count} ({delivery_sum:,} сум)\n"
-            f"💰 Заработано: {confirmed_sum:,} сум\n\n"
+            f"💰 Выручка: {confirmed_sum:,} сум\n"
+            f"💵 **Твой заработок ({COMMISSION_PERCENT}%): {commission_total:,} сум**\n\n"
             f"⏳ В ожидании: {pending_count}\n"
             f"❌ Отклонено: {rejected_count}\n\n"
             f"📌 **Всего заказов:** {total_orders}"
