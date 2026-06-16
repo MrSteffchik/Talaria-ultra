@@ -648,14 +648,22 @@ async def order_checker_loop(app: Application):
                     total = order["total_price"]
                     items = order["items"] or []
                     
-                    # Форматируем состав заказа
+                    # Форматируем состав заказа с ссылками на товары
                     items_list = []
                     for idx, item in enumerate(items, 1):
                         title = item.get("title", "Товар")
                         size = item.get("size", "Без размера")
                         qty = item.get("quantity", 1)
                         price = item.get("price", "")
-                        items_list.append(f"{idx}. {title} (Размер: {size}) — {qty} шт. | {price}")
+                        product_id = item.get("id")
+                        
+                        # Создаём ссылку на товар
+                        if product_id:
+                            title_link = f"[{title}](https://talaria.uz/product.html?id={product_id})"
+                        else:
+                            title_link = title
+                        
+                        items_list.append(f"{idx}. {title_link} (Размер: {size}) — {qty} шт. | {price}")
                     
                     items_str = "\n".join(items_list)
 
