@@ -952,8 +952,7 @@ async def handle_create(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "card_last_four": None,
             "items": [{"title": "Продажа в магазине", "quantity": quantity, "price": f"{total_amount:,} сум".replace(",", " ")}],
             "total_price": total_amount,
-            "status": "confirmed",
-            "manual_entry": True
+            "status": "confirmed"
         }
 
         result = supabase.table("orders").insert(sale_data).execute()
