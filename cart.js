@@ -52,14 +52,49 @@ function cleanTitle(titleStr, descStr) {
   // Убираем лишние пробелы и дефисы
   clean = clean.replace(/[\s-]+/g, ' ').trim();
   
-  if (clean.length < 2) {
+  // Если название слишком короткое или мусорное — используем описание
+  const badTitles = ['размер в размер', 'женская обувь', 'обувь talaria', 'talaria', 'новый завоз', 'новинка'];
+  const cleanLower = clean.toLowerCase();
+  
+  if (clean.length < 3 || badTitles.some(bad => cleanLower.includes(bad))) {
+    // Пытаемся извлечь нормальное название из описания
     const text = (descStr || '').toLowerCase();
-    if (text.includes('кроссовк') || text.includes('кед')) return 'Стильные кроссовки';
-    if (text.includes('туфли') || text.includes('каблук')) return 'Элегантные туфли';
-    if (text.includes('босонож') || text.includes('сандал')) return 'Премиальные босоножки';
-    if (text.includes('сабо') || text.includes('слипон')) return 'Удобные сабо';
+    
+    // Определяем тип обуви
+    let shoeType = '';
+    if (text.includes('кроссовк') || text.includes('кед')) shoeType = 'Кроссовки';
+    else if (text.includes('туфли') || text.includes('лодочк') || text.includes('каблук')) shoeType = 'Туфли';
+    else if (text.includes('босонож') || text.includes('сандал')) shoeType = 'Босоножки';
+    else if (text.includes('сабо') || text.includes('слипон')) shoeType = 'Сабо';
+    else if (text.includes('балетк')) shoeType = 'Балетки';
+    else if (text.includes('мокасин')) shoeType = 'Мокасины';
+    else if (text.includes('ботинок') || text.includes('ботильон')) shoeType = 'Ботинки';
+    else if (text.includes('полуботинок')) shoeType = 'Полуботинки';
+    
+    // Определяем цвет
+    let color = '';
+    if (text.includes('бел') && !text.includes('белоснеж')) color = 'белые';
+    else if (text.includes('чёрн') || text.includes('черн')) color = 'чёрные';
+    else if (text.includes('бежев')) color = 'бежевые';
+    else if (text.includes('коричнев')) color = 'коричневые';
+    else if (text.includes('сер') && !text.includes('серебр')) color = 'серые';
+    else if (text.includes('красн')) color = 'красные';
+    else if (text.includes('розов')) color = 'розовые';
+    else if (text.includes('син') || text.includes('голуб')) color = 'синие';
+    else if (text.includes('зелён') || text.includes('зелен')) color = 'зелёные';
+    else if (text.includes('золот')) color = 'золотистые';
+    else if (text.includes('серебр')) color = 'серебристые';
+    else if (text.includes('нюд')) color = 'нюд';
+    else if (text.includes('леопард')) color = 'леопардовые';
+    
+    // Формируем красивое название
+    if (shoeType && color) return `${shoeType} ${color}`;
+    if (shoeType) return shoeType;
+    if (color) return `Туфли ${color}`;
+    
     return 'Женская обувь Talaria';
   }
+  
   return clean;
 }
 
