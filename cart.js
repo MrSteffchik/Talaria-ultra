@@ -39,12 +39,18 @@ function cleanSizes(sizesStr) {
   return '';
 }
 
-// Умная очистка названий (убирает эмодзи, мусорные реакции из Telegram)
+// Умная очистка названий (убирает эмодзи, мусорные реакции из Telegram, цифры размеров)
 function cleanTitle(titleStr, descStr) {
   if (!titleStr) return 'Элегантная модель';
 
   let clean = stripEmoji(titleStr);
   clean = clean.replace(LEADING_JUNK_RE, '').trim();
+  
+  // Убираем цифры размеров (35-46) из названия
+  clean = clean.replace(/\b(3[5-9]|4[0-6])\b/g, '').trim();
+  
+  // Убираем лишние пробелы и дефисы
+  clean = clean.replace(/[\s-]+/g, ' ').trim();
   
   if (clean.length < 2) {
     const text = (descStr || '').toLowerCase();

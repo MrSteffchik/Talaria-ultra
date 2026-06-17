@@ -50,10 +50,11 @@ function getProductColor(p) {
 
 function getVariantKey(p) {
   if (p.variant_key) return p.variant_key;
-  const title = typeof cleanTitle === 'function'
+  // Очищаем название от цифр размеров для правильной группировки
+  const rawTitle = typeof cleanTitle === 'function'
     ? cleanTitle(p.title, p.description).toLowerCase()
     : String(p.title || '').toLowerCase();
-  return `${title}|${priceAmountKey(p.price)}`;
+  return `${rawTitle}|${priceAmountKey(p.price)}`;
 }
 
 /** Убирает точные дубли, группирует варианты по variant_key */
