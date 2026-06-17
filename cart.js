@@ -39,63 +39,94 @@ function cleanSizes(sizesStr) {
   return '';
 }
 
-// Умная очистка названий (убирает эмодзи, мусорные реакции из Telegram, цифры размеров)
+// Умная очистка названий (убирает эмодзи, мусор, цифры размеров)
 function cleanTitle(titleStr, descStr) {
-  if (!titleStr) return 'Элегантная модель';
+  if (!titleStr && !descStr) return 'Элегантная модель';
 
-  let clean = stripEmoji(titleStr);
-  clean = clean.replace(LEADING_JUNK_RE, '').trim();
+  const text = (descStr || '').toLowerCase();
+  const titleText = (titleStr || '').toLowerCase();
+  const combined = `${titleText} ${text}`;
   
-  // Убираем цифры размеров (35-46) из названия
-  clean = clean.replace(/\b(3[5-9]|4[0-6])\b/g, '').trim();
+  // === ШАГ 1: Определяем тип обуви ===
+  let shoeType = '';
   
-  // Убираем лишние пробелы и дефисы
-  clean = clean.replace(/[\s-]+/g, ' ').trim();
-  
-  // Если название слишком короткое или мусорное — используем описание
-  const badTitles = ['размер в размер', 'женская обувь', 'обувь talaria', 'talaria', 'новый завоз', 'новинка'];
-  const cleanLower = clean.toLowerCase();
-  
-  if (clean.length < 3 || badTitles.some(bad => cleanLower.includes(bad))) {
-    // Пытаемся извлечь нормальное название из описания
-    const text = (descStr || '').toLowerCase();
-    
-    // Определяем тип обуви
-    let shoeType = '';
-    if (text.includes('кроссовк') || text.includes('кед')) shoeType = 'Кроссовки';
-    else if (text.includes('туфли') || text.includes('лодочк') || text.includes('каблук')) shoeType = 'Туфли';
-    else if (text.includes('босонож') || text.includes('сандал')) shoeType = 'Босоножки';
-    else if (text.includes('сабо') || text.includes('слипон')) shoeType = 'Сабо';
-    else if (text.includes('балетк')) shoeType = 'Балетки';
-    else if (text.includes('мокасин')) shoeType = 'Мокасины';
-    else if (text.includes('ботинок') || text.includes('ботильон')) shoeType = 'Ботинки';
-    else if (text.includes('полуботинок')) shoeType = 'Полуботинки';
-    
-    // Определяем цвет
-    let color = '';
-    if (text.includes('бел') && !text.includes('белоснеж')) color = 'белые';
-    else if (text.includes('чёрн') || text.includes('черн')) color = 'чёрные';
-    else if (text.includes('бежев')) color = 'бежевые';
-    else if (text.includes('коричнев')) color = 'коричневые';
-    else if (text.includes('сер') && !text.includes('серебр')) color = 'серые';
-    else if (text.includes('красн')) color = 'красные';
-    else if (text.includes('розов')) color = 'розовые';
-    else if (text.includes('син') || text.includes('голуб')) color = 'синие';
-    else if (text.includes('зелён') || text.includes('зелен')) color = 'зелёные';
-    else if (text.includes('золот')) color = 'золотистые';
-    else if (text.includes('серебр')) color = 'серебристые';
-    else if (text.includes('нюд')) color = 'нюд';
-    else if (text.includes('леопард')) color = 'леопардовые';
-    
-    // Формируем красивое название
-    if (shoeType && color) return `${shoeType} ${color}`;
-    if (shoeType) return shoeType;
-    if (color) return `Туфли ${color}`;
-    
-    return 'Женская обувь Talaria';
+  // Приоритет описанию (там больше деталей)
+  if (text.includes('кроссовк') || text.includes('кед') || text.includes('спортивн') || text.includes('на шнурк')) {
+    shoeType = 'Кроссовки';
+  } else if (text.includes('туфли') || text.includes('лодочк') || text.includes('на каблок') || text.includes('каблук')) {
+    shoeType = 'Туфли';
+  } else if (text.includes('босонож') || text.includes('сандал') || text.includes('открыт')) {
+    shoeType = 'Босоножки';
+  } else if (text.includes('сабо') || text.includes('слипон') || text.includes('без шнурк')) {
+    shoeType = 'Сабо';
+  } else if (text.includes('балетк')) {
+    shoeType = 'Балетки';
+  } else if (text.includes('мокасин')) {
+    shoeType = 'Мокасины';
+  } else if (text.includes('ботинок') || text.includes('ботильон') || text.includes('зимн') || text.includes('осен')) {
+    shoeType = 'Ботинки';
+  } else if (text.includes('полуботинок')) {
+    shoeType = 'Полуботинки';
+  } else if (text.includes('вьетнамк') || text.includes('шлёпанц') || text.includes('пляж')) {
+    shoeType = 'Вьетнамки';
+  } else if (text.includes('лофер')) {
+    shoeType = 'Лоферы';
   }
   
-  return clean;
+  // Если не определили по описанию — смотрим title
+  if (!shoeType) {
+    if (titleText.includes('кроссовк') || titleText.includes('кед')) shoeType = 'Кроссовки';
+    else if (titleText.includes('туфли') || titleText.includes('лодочк')) shoeType = 'Туфли';
+    else if (titleText.includes('босонож') || titleText.includes('сандал')) shoeType = 'Босоножки';
+    else if (titleText.includes('сабо') || titleText.includes('слипон')) shoeType = 'Сабо';
+    else if (titleText.includes('балетк')) shoeType = 'Балетки';
+    else if (titleText.includes('мокасин')) shoeType = 'Мокасины';
+    else if (titleText.includes('ботинок')) shoeType = 'Ботинки';
+  }
+  
+  // === ШАГ 2: Определяем цвет ===
+  let color = '';
+  
+  if (combined.includes('бел') && !combined.includes('белоснеж') && !combined.includes('не бел')) color = 'белые';
+  else if (combined.includes('чёрн') || combined.includes('черн') || combined.includes('black')) color = 'чёрные';
+  else if (combined.includes('бежев') || combined.includes('нюд') || combined.includes('телесн')) color = 'бежевые';
+  else if (combined.includes('коричнев') || combined.includes('шоколад')) color = 'коричневые';
+  else if (combined.includes('сер') && !combined.includes('серебр')) color = 'серые';
+  else if (combined.includes('серебр') || combined.includes('металл')) color = 'серебристые';
+  else if (combined.includes('красн') || combined.includes('бордо') || combined.includes('винн')) color = 'красные';
+  else if (combined.includes('розов')) color = 'розовые';
+  else if (combined.includes('син') && !combined.includes('бирюз')) color = 'синие';
+  else if (combined.includes('голуб') || combined.includes('бирюз')) color = 'голубые';
+  else if (combined.includes('зелён') || combined.includes('зелен') || combined.includes('хаки') || combined.includes('оливк')) color = 'зелёные';
+  else if (combined.includes('золот') || combined.includes('золотист')) color = 'золотистые';
+  else if (combined.includes('леопард') || combined.includes('пятн')) color = 'леопардовые';
+  else if (combined.includes('зебр') || combined.includes('полосат')) color = 'в полоску';
+  else if (combined.includes('принт') || combined.includes('узор')) color = 'с принтом';
+  else if (combined.includes('разноцвет') || combined.includes('мульти')) color = 'разноцветные';
+  
+  // === ШАГ 3: Формируем красивое название ===
+  if (shoeType && color) return `${shoeType} ${color}`;
+  if (shoeType) return shoeType;
+  if (color) return `Туфли ${color}`;
+  
+  // === ШАГ 4: Если ничего не определили — чистим исходное название ===
+  if (titleStr) {
+    let clean = stripEmoji(titleStr);
+    clean = clean.replace(LEADING_JUNK_RE, '').trim();
+    clean = clean.replace(/\b(3[5-9]|4[0-6])\b/g, '').trim(); // убираем размеры
+    clean = clean.replace(/[\s-]+/g, ' ').trim();
+    
+    // Проверяем на мусор
+    const badTitles = ['размер в размер', 'женская обувь', 'обувь talaria', 'talaria', 'новый завоз', 'новинка', 'женская обувь talaria'];
+    const cleanLower = clean.toLowerCase();
+    
+    if (clean.length >= 3 && !badTitles.some(bad => cleanLower.includes(bad))) {
+      return clean;
+    }
+  }
+  
+  // Дефолтное название
+  return shoeType || 'Женская обувь';
 }
 
 // Умная очистка описания от эмодзи и Telegram-реакций
