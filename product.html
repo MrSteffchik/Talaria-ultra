@@ -202,30 +202,41 @@
         if (!id) { showError(); return; }
 
         try {
+          console.log('🔍 Загрузка товара ID:', id);
+          
           const { data, error } = await _sb
             .from('products')
             .select('*')
             .eq('id', id)
             .single();
 
+          console.log('📦 Получено:', data ? 'OK' : 'NULL', 'Ошибка:', error);
+
           if (error || !data) {
-            if (error?.code === 'PGRST116') showSoldOut();
-            else showError();
+            if (error?.code === 'PGRST116') {
+              console.log('❌ Товар не найден (продан)');
+              showSoldOut();
+            } else {
+              console.log('❌ Ошибка загрузки:', error);
+              showError();
+            }
             return;
           }
 
           if (data.is_available === false) {
+            console.log('❌ Товар снят с продажи');
             showSoldOut();
             return;
           }
 
+          console.log('✅ Товар загружен успешно');
           productData = data;
           productVariants = [data];
           selectedColor = getProductColor(data);
           await loadSiblingVariants(data);
           renderProduct(data);
         } catch (e) {
-          console.error(e);
+          console.error('❌ Критическая ошибка:', e);
           showError();
         }
       }
@@ -282,6 +293,8 @@
       }
 
       function renderProduct(p) {
+        console.log('🎨 Рендер товара:', p.title);
+        
         const photos = p.photos && p.photos.length > 0
           ? p.photos
           : ['https://via.placeholder.com/600x600?text=Нет+фото'];
@@ -357,8 +370,11 @@
           id: productData?.id || p.id,
         });
 
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('product').classList.remove('hidden');
+        // Скрываем ошибку/продано, показываем товар
+        document.getElementById('loading')?.classList.add('hidden');
+        document.getElementById('error')?.classList.add('hidden');
+        document.getElementById('sold-out')?.classList.add('hidden');
+        document.getElementById('product')?.classList.remove('hidden');
 
         // Document Title
         document.title = `Talaria — ${cleanedTitle}`;
@@ -396,6 +412,8 @@
         
         // Initial Cart Badge Load
         updateCartBadge();
+        
+        console.log('✅ Товар отрендерен');
       }
 
       function switchPhoto(url, el) {
