@@ -323,7 +323,11 @@
 
         if (rawSizes) {
           const cleanSizesStr = cleanSizes(rawSizes);
-          const sizesArray = cleanSizesStr.split(/[,;\s]+/).map(s => s.trim()).filter(s => s.length > 0);
+          const sizesArray = cleanSizesStr.split(/[,;\s]+/).map(s => s.trim()).filter(s => {
+            const sizeNum = parseInt(s, 10);
+            // Фильтр: только размеры 39-44
+            return s.length > 0 && sizeNum >= 39 && sizeNum <= 44;
+          });
 
           if (sizesArray.length > 0) {
             document.getElementById('sizes-block').classList.remove('hidden');

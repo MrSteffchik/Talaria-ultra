@@ -34,8 +34,10 @@ function priceAmountKey(priceStr) {
 
 function parseColorFromText(text) {
   if (!text) return '';
+  // Сначала удаляем цифры и размеры из текста чтобы не парсить "белые 40"
+  const cleanText = text.replace(/\d{2,}/g, '').trim();
   for (const [re, label] of COLOR_PARSE) {
-    if (re.test(text)) return label;
+    if (re.test(cleanText)) return label;
   }
   return '';
 }

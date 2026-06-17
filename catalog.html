@@ -131,10 +131,6 @@
           <div class="flex items-center space-x-3 w-full md:w-auto overflow-x-auto py-1">
             <span class="text-xs text-[#8C847A] uppercase tracking-wider whitespace-nowrap">Размер:</span>
             <div class="flex gap-1.5" id="size-filters-container">
-              <button onclick="toggleSizeFilter(35)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">35</button>
-              <button onclick="toggleSizeFilter(36)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">36</button>
-              <button onclick="toggleSizeFilter(37)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">37</button>
-              <button onclick="toggleSizeFilter(38)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">38</button>
               <button onclick="toggleSizeFilter(39)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">39</button>
               <button onclick="toggleSizeFilter(40)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">40</button>
               <button onclick="toggleSizeFilter(41)" class="size-filter-btn w-9 h-9 text-[11px] font-semibold tracking-tighter border border-[#E5DCD3] hover:border-[#1A1A1A] transition rounded-none bg-white">41</button>
@@ -347,6 +343,15 @@
             return title.includes(searchQuery) || desc.includes(searchQuery);
           });
         }
+        
+        // Фильтр: убираем модели где все размеры < 39
+        filtered = filtered.filter(p => {
+          if (!p.sizes) return true;
+          const cleanSizesStr = cleanSizes(p.sizes.toString());
+          const sizesArray = cleanSizesStr.split(', ').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s));
+          // Оставляем если есть хотя бы один размер >= 39
+          return sizesArray.some(s => s >= 39);
+        });
         
         if (filtered.length === 0) {
           grid.classList.add('hidden');
