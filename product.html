@@ -190,6 +190,28 @@
     <script src="cart.js"></script>
     <script src="product-variants.js"></script>
     <script>
+      // === Утилиты для product.html (дублируем из cart.js для надёжности) ===
+      
+      // Совместимая очистка эмодзи
+      function stripEmoji(text) {
+        if (!text) return '';
+        return text
+          .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+          .replace(/[\u2000-\u3300\u2600-\u27BF]/g, '')
+          .trim();
+      }
+      
+      // Умная очистка размеров (убирает сердечки, стрелочки и оставляет только числа)
+      function cleanSizes(sizesStr) {
+        if (!sizesStr) return '';
+        const stripped = stripEmoji(String(sizesStr)).replace(/[^\d,\s\-.]/g, '');
+        const matches = stripped.match(/\b(3[4-9]|4[0-9]|5[0-2])\b/g);
+        if (matches) {
+          return [...new Set(matches)].sort().join(', ');
+        }
+        return '';
+      }
+      
       // Создаём клиента Supabase при загрузке
       let _sb;
       try {
