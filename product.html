@@ -210,21 +210,33 @@
 
       async function loadProduct() {
         const id = new URLSearchParams(window.location.search).get('id');
-        if (!id) { showError(); return; }
+        if (!id) { 
+          console.error('❌ Нет ID товара в URL');
+          showError();
+          return;
+        }
 
         console.log('🔍 Загрузка товара ID:', id);
-        console.log('📱 Пользователь агент:', navigator.userAgent);
-        console.log('🌐 Supabase URL:', CONFIG.SUPABASE_URL);
+        console.log('🌐 Supabase URL:', CONFIG?.SUPABASE_URL || 'НЕ ЗАГРУЖЕН');
+        console.log('🔑 Supabase Key:', CONFIG?.SUPABASE_ANON_KEY ? 'Есть ключ' : 'НЕТ КЛЮЧА');
 
         try {
           // Проверяем, что Supabase загружен
           if (typeof supabase === 'undefined') {
-            console.error('❌ Supabase не загружен!');
+            console.error('❌ Supabase библиотека не загружена!');
+            showError();
+            return;
+          }
+          
+          if (!CONFIG || !CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
+            console.error('❌ CONFIG не загружен или пустой!');
             showError();
             return;
           }
 
           const client = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+          
+          console.log('📡 Выполняем запрос к Supabase...');
           
           const { data, error } = await client
             .from('products')
@@ -232,13 +244,17 @@
             .eq('id', id)
             .single();
 
-          console.log('📦 Получено:', data ? 'OK' : 'NULL', 'Ошибка:', error);
+          console.log('📦 Результат:', {
+            data: data ? 'OK' : 'NULL',
+            error: error ? error.message : 'Нет ошибки'
+          });
 
           if (error) {
             console.error('❌ Ошибка Supabase:', error);
             
             // Если ошибка "not found" — показываем продано
             if (error.code === 'PGRST116' || error.message?.includes('not found')) {
+              console.log('❌ Товар не найден (продан)');
               showSoldOut();
               return;
             }
@@ -256,13 +272,16 @@
           }
 
           if (!data) {
-            console.log('❌ Товар не найден в БД');
+            console.log('❌ Товар не найден в БД (data = null)');
             showError();
             return;
           }
 
+          console.log('✅ Данные получены:', data.title);
+          console.log('📊 is_available:', data.is_available);
+
           if (data.is_available === false) {
-            console.log('❌ Товар снят с продажи');
+            console.log('❌ Товар снят с продажи (is_available = false)');
             showSoldOut();
             return;
           }
