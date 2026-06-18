@@ -190,7 +190,18 @@
     <script src="cart.js"></script>
     <script src="product-variants.js"></script>
     <script>
-      const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+      // Создаём клиента Supabase при загрузке
+      let _sb;
+      try {
+        if (typeof supabase !== 'undefined' && CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
+          _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+          console.log('✅ Supabase клиент создан');
+        } else {
+          console.error('❌ Supabase не инициализирован!');
+        }
+      } catch (e) {
+        console.error('❌ Ошибка инициализации Supabase:', e);
+      }
 
       let productData = null;
       let productVariants = [];
@@ -201,10 +212,21 @@
         const id = new URLSearchParams(window.location.search).get('id');
         if (!id) { showError(); return; }
 
+        console.log('🔍 Загрузка товара ID:', id);
+        console.log('📱 Пользователь агент:', navigator.userAgent);
+        console.log('🌐 Supabase URL:', CONFIG.SUPABASE_URL);
+
         try {
-          console.log('🔍 Загрузка товара ID:', id);
+          // Проверяем, что Supabase загружен
+          if (typeof supabase === 'undefined') {
+            console.error('❌ Supabase не загружен!');
+            showError();
+            return;
+          }
+
+          const client = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
           
-          const { data, error } = await _sb
+          const { data, error } = await client
             .from('products')
             .select('*')
             .eq('id', id)
@@ -212,14 +234,30 @@
 
           console.log('📦 Получено:', data ? 'OK' : 'NULL', 'Ошибка:', error);
 
-          if (error || !data) {
-            if (error?.code === 'PGRST116') {
-              console.log('❌ Товар не найден (продан)');
+          if (error) {
+            console.error('❌ Ошибка Supabase:', error);
+            
+            // Если ошибка "not found" — показываем продано
+            if (error.code === 'PGRST116' || error.message?.includes('not found')) {
               showSoldOut();
-            } else {
-              console.log('❌ Ошибка загрузки:', error);
-              showError();
+              return;
             }
+            
+            // Если ошибка доступа — возможно RLS проблема
+            if (error.code === '42501' || error.message?.includes('policy')) {
+              console.log('⚠️ Проблема с RLS политиками!');
+              showError();
+              return;
+            }
+            
+            // Показываем ошибку
+            showError();
+            return;
+          }
+
+          if (!data) {
+            console.log('❌ Товар не найден в БД');
+            showError();
             return;
           }
 
@@ -229,14 +267,15 @@
             return;
           }
 
-          console.log('✅ Товар загружен успешно');
+          console.log('✅ Товар загружен успешно:', data.title);
           productData = data;
           productVariants = [data];
           selectedColor = getProductColor(data);
           await loadSiblingVariants(data);
           renderProduct(data);
         } catch (e) {
-          console.error('❌ Критическая ошибка:', e);
+          console.error('❌ Критическая ошибка при загрузке:', e);
+          console.error('📋 Stack trace:', e.stack);
           showError();
         }
       }
