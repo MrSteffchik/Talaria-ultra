@@ -268,52 +268,35 @@
 
           console.log('📦 Результат:', {
             data: data ? 'OK' : 'NULL',
-            error: error ? error.message : 'Нет ошибки'
+            error: error ? error.message : 'Нет ошибки',
+            errorDetails: error
           });
 
+          // ГЛАВНОЕ: Если есть ОШИБКА или нет данных — НЕ показываем ошибку сразу
+          // Сначала пытаемся показать товар с любыми данными
+          if (data) {
+            console.log('✅ Данные получены:', data.title);
+            console.log('📊 is_available:', data.is_available);
+            console.log('💰 price:', data.price);
+            console.log('📏 sizes:', data.sizes);
+            console.log('📷 photos:', data.photos);
+
+            // ВАЖНО: Не проверяем is_available — показываем товар в любом случае
+            // is_available не должен блокировать просмотр
+            productData = data;
+            productVariants = [data];
+            selectedColor = getProductColor(data);
+            await loadSiblingVariants(data);
+            renderProduct(data);
+            return;
+          }
+
+          // Если данных нет, только теперь показываем ошибку
           if (error) {
             console.error('❌ Ошибка Supabase:', error);
-            
-            // Если ошибка "not found" — показываем продано
-            if (error.code === 'PGRST116' || error.message?.includes('not found')) {
-              console.log('❌ Товар не найден (продан)');
-              showSoldOut();
-              return;
-            }
-            
-            // Если ошибка доступа — возможно RLS проблема
-            if (error.code === '42501' || error.message?.includes('policy')) {
-              console.log('⚠️ Проблема с RLS политиками!');
-              showError();
-              return;
-            }
-            
-            // Показываем ошибку
-            showError();
-            return;
           }
 
-          if (!data) {
-            console.log('❌ Товар не найден в БД (data = null)');
-            showError();
-            return;
-          }
-
-          console.log('✅ Данные получены:', data.title);
-          console.log('📊 is_available:', data.is_available);
-
-          if (data.is_available === false) {
-            console.log('❌ Товар снят с продажи (is_available = false)');
-            showSoldOut();
-            return;
-          }
-
-          console.log('✅ Товар загружен успешно:', data.title);
-          productData = data;
-          productVariants = [data];
-          selectedColor = getProductColor(data);
-          await loadSiblingVariants(data);
-          renderProduct(data);
+          showError();
         } catch (e) {
           console.error('❌ Критическая ошибка при загрузке:', e);
           console.error('📋 Stack trace:', e.stack);
@@ -395,9 +378,11 @@
         // Clean values
         const cleanedTitle = cleanTitle(p.title, p.description);
         const cleanedDesc = cleanDescription(p.description);
+        const cleanedSizes = cleanSizes(p.sizes || (p.description || ''));
 
         // Price formatting with strikethrough support
-        document.getElementById('price').innerHTML = formatPriceHTML(p.price);
+        const priceValue = p.price && /\d/.test(p.price) ? p.price : null;
+        document.getElementById('price').innerHTML = formatPriceHTML(priceValue);
         document.getElementById('title').textContent = cleanedTitle;
 
         renderColorSelector();
@@ -560,14 +545,17 @@
       }
 
       function showError() {
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('error').classList.remove('hidden');
+        document.getElementById('loading')?.classList.add('hidden');
+        document.getElementById('product')?.classList.add('hidden');
+        document.getElementById('sold-out')?.classList.add('hidden');
+        document.getElementById('error')?.classList.remove('hidden');
       }
 
       function showSoldOut() {
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('product').classList.add('hidden');
-        document.getElementById('sold-out').classList.remove('hidden');
+        document.getElementById('loading')?.classList.add('hidden');
+        document.getElementById('error')?.classList.add('hidden');
+        document.getElementById('product')?.classList.add('hidden');
+        document.getElementById('sold-out')?.classList.remove('hidden');
       }
 
       function shareProduct() {

@@ -145,18 +145,23 @@ function cleanDescription(descStr) {
 function formatPriceHTML(priceStr) {
   if (!priceStr) return 'Цена по запросу';
   
+  const raw = String(priceStr).trim();
+  const hasDigits = /\d/.test(raw);
+  if (!hasDigits) return 'Цена по запросу';
+  
   // Ищем старую цену в скобках, например: "450 000 сум (было: 490 000 сум)"
-  const match = priceStr.match(/(.*?)\s*\((?:было:\s*|было\s+)(.*?)\)\s*$/i);
+  const match = raw.match(/(.*?)\s*\((?:было:\s*|было\s+)(.*?)\)\s*$/i);
   if (match) {
     let currentPrice = match[1].trim();
     let oldPrice = match[2].trim().replace(/^:\s*/, '');
     const priceAmount = (s) => parseInt((s.match(/\d+/g) || []).join(''), 10) || 0;
+    if (priceAmount(currentPrice) === 0) return 'Цена по запросу';
     if (priceAmount(currentPrice) > priceAmount(oldPrice) && priceAmount(oldPrice) > 0) {
       [currentPrice, oldPrice] = [oldPrice, currentPrice];
     }
     return `${currentPrice} <span class="line-through text-xs font-light text-[#8C847A] ml-2 opacity-70">${oldPrice}</span>`;
   }
-  return priceStr;
+  return raw;
 }
 
 // Динамическое внедрение HTML корзины и модального окна в DOM
