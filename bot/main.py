@@ -1068,6 +1068,11 @@ async def post_init(application: Application) -> None:
 # ─── Запуск ───────────────────────────────────────────────────────────────────
 
 import asyncio
+from aiohttp import web
+
+# Хэндлер для веб-сервера (чтобы Render видел, что порт отвечает)
+async def handle_web(request):
+    return web.Response(text="Bot is running")
 
 async def main():
     app = Application.builder().token(TELEGRAM_TOKEN).post_init(post_init).build()
@@ -1084,6 +1089,17 @@ async def main():
     await app.initialize()
     await app.updater.start_polling(allowed_updates=["message", "channel_post", "callback_query"])
     await app.start()
+    
+    # Запуск веб-сервера на порту, который просит Render (по умолчанию 10000)
+    web_app = web.Application()
+    web_app.router.add_get("/", handle_web)
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    log.info(f"Веб-заглушка запущена на порту {port}")
     
     while True:
         await asyncio.sleep(3600)
