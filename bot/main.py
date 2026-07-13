@@ -14,6 +14,25 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+# Память для логов для веб-диагностики
+class MemoryHandler(logging.Handler):
+    def __init__(self, limit=100):
+        super().__init__()
+        self.limit = limit
+        self.records = []
+
+    def emit(self, record):
+        try:
+            self.records.append(self.format(record))
+            if len(self.records) > self.limit:
+                self.records.pop(0)
+        except Exception:
+            self.handleError(record)
+
+memory_log_handler = MemoryHandler()
+memory_log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+logging.getLogger().addHandler(memory_log_handler)
+
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 SUPABASE_URL   = os.environ["SUPABASE_URL"]
 SUPABASE_KEY   = os.environ["SUPABASE_SERVICE_KEY"]
@@ -1109,6 +1128,7 @@ async def handle_web(request):
         "has_supabase_service_key": bool(os.environ.get("SUPABASE_SERVICE_KEY")),
         "admin_chat_id": os.environ.get("ADMIN_CHAT_ID"),
         "admin_ids": os.environ.get("ADMIN_IDS"),
+        "logs": memory_log_handler.records
     })
 
 
