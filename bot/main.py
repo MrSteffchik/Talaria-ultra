@@ -1067,7 +1067,9 @@ async def post_init(application: Application) -> None:
 
 # ─── Запуск ───────────────────────────────────────────────────────────────────
 
-def main():
+import asyncio
+
+async def main():
     app = Application.builder().token(TELEGRAM_TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", handle_start))
     app.add_handler(CommandHandler("stats", handle_stats))
@@ -1076,9 +1078,18 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_message))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_availability_reply))
     app.add_handler(CallbackQueryHandler(handle_order_callback))
+    
     log.info("Бот запущен — каталог из фото, «продано» / «продано 42» снимает с сайта...")
-    app.run_polling(allowed_updates=["message", "channel_post", "callback_query"])
-
+    
+    await app.initialize()
+    await app.updater.start_polling(allowed_updates=["message", "channel_post", "callback_query"])
+    await app.start()
+    
+    while True:
+        await asyncio.sleep(3600)
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        log.info("Бот остановлен")
