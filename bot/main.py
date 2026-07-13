@@ -1070,42 +1070,35 @@ async def post_init(application: Application) -> None:
 import asyncio
 from aiohttp import web
 
-# Хэндлер для веб-сервера (чтобы Render видел, что порт отвечает)
+# Хэндлер для обработки запросов от Render (GET) и заказов от Supabase (POST)
 async def handle_web(request):
+    if request.method == 'POST':
+        try:
+            data = await request.json()
+            # Supabase отправляет данные в поле 'record' при INSERT
+            order_data = data.get('record', {})
+            
+            # Собираем красивый текст уведомления (измени названия полей под свою таблицу orders, если они другие)
+            order_id = order_data.get('id', 'Неизвестно')
+            customer_name = order_data.get('customer_name', 'Не указано')
+            total_price = order_data.get('total_price', '0')
+            
+            text = f"🛍 **Новый заказ на сайте!**\n\n" \
+                   f"№ Заказа: {order_id}\n" \
+                   f"Покупатель: {customer_name}\n" \
+                   f"Сумма: {total_price} руб."
+            
+            # Получаем объект бота из нашего telegram-приложения
+            # (Убедись, что переменная app доступна или замени на отправку через токен)
+            from telegram import Bot
+            bot = Bot(token=TELEGRAM_TOKEN)
+            
+            # Отправляем админу (вместо ADMIN_ID поставь свой ID в Telegram цифрами, например 7348509108)
+            await bot.send_message(chat_id=7348509108, text=text, parse_mode="Markdown")
+            
+            return web.Response(text="Order processed", status=200)
+        except Exception as e:
+            log.error(f"Ошибка при обработке вебхука заказа: {e}")
+            return web.Response(text="Error", status=500)
+            
     return web.Response(text="Bot is running")
-
-async def main():
-    app = Application.builder().token(TELEGRAM_TOKEN).post_init(post_init).build()
-    app.add_handler(CommandHandler("start", handle_start))
-    app.add_handler(CommandHandler("stats", handle_stats))
-    app.add_handler(CommandHandler("clear", handle_clear))
-    app.add_handler(CommandHandler("create", handle_create))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_message))
-    app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_availability_reply))
-    app.add_handler(CallbackQueryHandler(handle_order_callback))
-    
-    log.info("Бот запущен — каталог из фото, «продано» / «продано 42» снимает с сайта...")
-    
-    await app.initialize()
-    await app.updater.start_polling(allowed_updates=["message", "channel_post", "callback_query"])
-    await app.start()
-    
-    # Запуск веб-сервера на порту, который просит Render (по умолчанию 10000)
-    web_app = web.Application()
-    web_app.router.add_get("/", handle_web)
-    runner = web.AppRunner(web_app)
-    await runner.setup()
-    
-    port = int(os.environ.get("PORT", 10000))
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    log.info(f"Веб-заглушка запущена на порту {port}")
-    
-    while True:
-        await asyncio.sleep(3600)
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        log.info("Бот остановлен")
