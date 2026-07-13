@@ -1101,7 +1101,15 @@ async def handle_web(request):
             log.error(f"Ошибка при обработке вебхука заказа: {e}")
             return web.Response(text="Error", status=500)
             
-    return web.Response(text="Bot is running")
+    # GET request: return diagnostics for debugging
+    return web.json_response({
+        "status": "Bot is running",
+        "has_telegram_token": bool(os.environ.get("TELEGRAM_TOKEN")),
+        "has_supabase_url": bool(os.environ.get("SUPABASE_URL")),
+        "has_supabase_service_key": bool(os.environ.get("SUPABASE_SERVICE_KEY")),
+        "admin_chat_id": os.environ.get("ADMIN_CHAT_ID"),
+        "admin_ids": os.environ.get("ADMIN_IDS"),
+    })
 
 
 async def on_startup(app_web):
