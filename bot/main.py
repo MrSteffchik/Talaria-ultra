@@ -1102,3 +1102,64 @@ async def handle_web(request):
             return web.Response(text="Error", status=500)
             
     return web.Response(text="Bot is running")
+
+
+async def on_startup(app_web):
+    log.info("Запуск Telegram-бота...")
+    tg_app = (
+        Application.builder()
+        .token(TELEGRAM_TOKEN)
+        .post_init(post_init)
+        .build()
+    )
+    
+    # Добавляем обработчики команд
+    tg_app.add_handler(CommandHandler("start", handle_start))
+    tg_app.add_handler(CommandHandler("stats", handle_stats))
+    tg_app.add_handler(CommandHandler("clear", handle_clear))
+    tg_app.add_handler(CommandHandler("create", handle_create))
+    
+    # Callback query handler
+    tg_app.add_handler(CallbackQueryHandler(handle_order_callback))
+    
+    # Message handler for checking commands on replies (sold, available etc.)
+    tg_app.add_handler(MessageHandler(filters.REPLY & filters.TEXT, handle_availability_reply))
+    
+    # Message handler for channel posts and messages with photos
+    tg_app.add_handler(MessageHandler(filters.PHOTO, handle_message))
+    
+    # Инициализируем и запускаем бота
+    await tg_app.initialize()
+    await tg_app.start()
+    await tg_app.updater.start_polling()
+    
+    # Сохраняем в приложении aiohttp, чтобы остановить при завершении
+    app_web['tg_app'] = tg_app
+    log.info("Telegram-бот успешно запущен в режиме Polling.")
+
+
+async def on_cleanup(app_web):
+    log.info("Остановка Telegram-бота...")
+    tg_app = app_web.get('tg_app')
+    if tg_app:
+        await tg_app.updater.stop()
+        await tg_app.stop()
+        await tg_app.shutdown()
+        log.info("Telegram-бот остановлен.")
+
+
+if __name__ == '__main__':
+    log.info("Инициализация веб-сервера aiohttp...")
+    web_app = web.Application()
+    
+    # Регистрируем хэндлер для путей
+    web_app.router.add_route('*', '/{tail:.*}', handle_web)
+    
+    # Настраиваем сигналы запуска и остановки
+    web_app.on_startup.append(on_startup)
+    web_app.on_cleanup.append(on_cleanup)
+    
+    # Запускаем веб-сервер
+    port = int(os.environ.get("PORT", 8000))
+    log.info(f"Запуск веб-сервера на порту {port}...")
+    web.run_app(web_app, host="0.0.0.0", port=port)
