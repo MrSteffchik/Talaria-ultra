@@ -617,29 +617,144 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Тот же товар повторно в группе (два поста с одной подписью) — дополняем фото
     vk = parsed.get("variant_key")
     pcolor = parsed.get("color")
-    dup_q = supabase.table("products").select("id, photos").eq("variant_key", vk)
-    if pcolor:
-        dup_q = dup_q.eq("color", pcolor)
-    else:
-        dup_q = dup_q.is_("color", "null")
-    dup_variant = dup_q.limit(1).execute()
-    if dup_variant.data:
-        row = dup_variant.data[0]
+    dup_variant_data = None
+    try:
+        dup_q = supabase.table("products").select("id, photos").eq("variant_key", vk)
+        if pcolor:
+            dup_q = dup_q.eq("color", pcolor)
+        else:
+            dup_q = dup_q.is_("color", "null")
+        dup_variant = dup_q.limit(1).execute()
+        dup_variant_data = dup_variant.data
+    except Exception as e:
+        log.warning("Не удалось проверить дубликаты (возможно, отсутствуют колонки variant_key/color в БД): %s", e)
+
+    if dup_variant_data:
+        row = dup_variant_data[0]
         photos = list(row.get("photos") or [])
         if photo_url and photo_url not in photos:
             photos.append(photo_url)
-            supabase.table("products").update({"photos": photos}).eq("id", row["id"]).execute()
-            log.info("Дубликат объединён с id=%s (variant_key=%s)", row["id"], vk)
+            try:
+                supabase.table("products").update({"photos": photos}).eq("id", row["id"]).execute()
+                log.info("Дубликат объединён с id=%s (variant_key=%s)", row["id"], vk)
+            except Exception as exc:
+                log.error("Ошибка при обновлении фото дубликата: %s", exc)
         return
 
     try:
         supabase.table("products").insert(parsed).execute()
         log.info("Сохранён товар: %s | %s | %s", parsed["title"], parsed.get("color"), parsed["price"])
     except Exception as exc:
-        log.error("Ошибка сохранения товара: %s", exc)
+        # Если колонок variant_key/color нет в БД, пробуем вставить без них
+        if "column" in str(exc).lower() and ("variant_key" in str(exc).lower() or "color" in str(exc).lower()):
+            log.warning("Пробуем вставить товар без колонок variant_key/color...")
+            backup_parsed = parsed.copy()
+            backup_parsed.pop("variant_key", None)
+            backup_parsed.pop("color", None)
+            try:
+                supabase.table("products").insert(backup_parsed).execute()
+                log.info("Сохранён товар (без variant_key/color): %s | %s", backup_parsed["title"], backup_parsed["price"])
+            except Exception as retry_exc:
+                log.error("Ошибка сохранения товара при повторной попытке: %s", retry_exc)
+        else:
+            log.error("Ошибка сохранения товара: %s", exc)
 
 
 # ─── Мониторинг заказов ────────────────────────────────────────────────────────
+
+async def process_and_send_order(bot, order: dict) -> bool:
+    """Форматирует и отправляет заказ в Telegram, после чего переводит статус в 'notified'."""
+    try:
+        admin_chat_id = os.environ.get("ADMIN_CHAT_ID")
+        if not admin_chat_id:
+            log.warning("⚠️ ВНИМАНИЕ: Переменная окружения ADMIN_CHAT_ID не установлена!")
+            return False
+
+        order_id = order["id"]
+        name = order["customer_name"]
+        phone = order["phone"]
+        delivery = order["delivery_type"]
+        address = order["address"] or "Не указан"
+        payment = order["payment_method"]
+        total = order["total_price"]
+        items = order["items"] or []
+        
+        # Форматируем состав заказа с ссылками на товары
+        items_list = []
+        for idx, item in enumerate(items, 1):
+            title = item.get("title", "Товар")
+            size = item.get("size", "Без размера")
+            qty = item.get("quantity", 1)
+            price = item.get("price", "")
+            product_id = item.get("id")
+            
+            # Создаём ссылку на товар
+            if product_id:
+                title_link = f"[{title}](https://talaria.uz/product.html?id={product_id})"
+            else:
+                title_link = title
+            
+            items_list.append(f"{idx}. {title_link} (Размер: {size}) — {qty} шт. | {price}")
+        
+        items_str = "\n".join(items_list)
+
+        # Форматируем доставку и оплату
+        deliv_str = "🚚 Доставка курьером" if delivery == "delivery" else "🏪 Самовывоз (Мирзо Улугбека 99)"
+
+        pay_str = "💵 Наличными / При получении"
+        if payment == "click":
+            pay_str = "📲 CLICK"
+        elif payment == "payme":
+            pay_str = "📲 PAYME"
+
+        # Добавляем последние 4 цифры карты если есть
+        card_last_four = order.get("card_last_four", "")
+        card_info = f"\n💳 **Карта:** {card_last_four}" if card_last_four else ""
+
+        # Генерируем ссылку на Яндекс.Карты для адреса
+        yandex_maps_link = ""
+        if delivery == "delivery" and address and address != "Не указан":
+            # Кодируем адрес для URL (добавляем Ташкент если нет)
+            import urllib.parse
+            address_for_map = address if "ташкент" in address.lower() else f"Ташкент {address}"
+            encoded_address = urllib.parse.quote(address_for_map)
+            yandex_maps_link = f"\n\n🗺️ [📍 Открыть адрес на Яндекс.Картах](https://yandex.uz/maps/?text={encoded_address})"
+
+        msg_text = (
+            f"🔔 **НОВЫЙ ЗАКАЗ #{order_id}!**\n\n"
+            f"👤 **Покупатель:** {name}\n"
+            f"📞 **Телефон:** [`{phone}`](tel:{phone.replace(' ', '')})\n"
+            f"📦 **Тип получения:** {deliv_str}\n"
+            f"📍 **Адрес:** {address}{yandex_maps_link}\n"
+            f"💳 **Оплата:** {pay_str}{card_info}\n\n"
+            f"🛍️ **Состав заказа:**\n{items_str}\n\n"
+            f"💰 **Итого к оплате:** {total:,} сум"
+        ).replace(",", " ")
+
+        # Создаем inline кнопки для подтверждения/отклонения
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ Подтвердить", callback_data=f"order_confirm_{order_id}"),
+                InlineKeyboardButton("❌ Отклонить", callback_data=f"order_reject_{order_id}")
+            ]
+        ])
+
+        # Отправляем уведомление администратору с кнопками
+        await bot.send_message(
+            chat_id=admin_chat_id,
+            text=msg_text,
+            parse_mode="Markdown",
+            reply_markup=keyboard
+        )
+        log.info("Отправлено уведомление о заказе #%s администратору", order_id)
+        
+        # Обновляем статус заказа, чтобы не слать повторно
+        supabase.table("orders").update({"status": "notified"}).eq("id", order_id).execute()
+        return True
+    except Exception as exc:
+        log.error("Ошибка при отправке заказа #%s: %s", order.get("id"), exc)
+        return False
+
 
 async def order_checker_loop(app: Application):
     import asyncio
@@ -662,86 +777,7 @@ async def order_checker_loop(app: Application):
             
             if res.data:
                 for order in res.data:
-                    order_id = order["id"]
-                    name = order["customer_name"]
-                    phone = order["phone"]
-                    delivery = order["delivery_type"]
-                    address = order["address"] or "Не указан"
-                    payment = order["payment_method"]
-                    total = order["total_price"]
-                    items = order["items"] or []
-                    
-                    # Форматируем состав заказа с ссылками на товары
-                    items_list = []
-                    for idx, item in enumerate(items, 1):
-                        title = item.get("title", "Товар")
-                        size = item.get("size", "Без размера")
-                        qty = item.get("quantity", 1)
-                        price = item.get("price", "")
-                        product_id = item.get("id")
-                        
-                        # Создаём ссылку на товар
-                        if product_id:
-                            title_link = f"[{title}](https://talaria.uz/product.html?id={product_id})"
-                        else:
-                            title_link = title
-                        
-                        items_list.append(f"{idx}. {title_link} (Размер: {size}) — {qty} шт. | {price}")
-                    
-                    items_str = "\n".join(items_list)
-
-                    # Форматируем доставку и оплату
-                    deliv_str = "🚚 Доставка курьером" if delivery == "delivery" else "🏪 Самовывоз (Мирзо Улугбека 99)"
-
-                    pay_str = "💵 Наличными / При получении"
-                    if payment == "click":
-                        pay_str = "📲 CLICK"
-                    elif payment == "payme":
-                        pay_str = "📲 PAYME"
-
-                    # Добавляем последние 4 цифры карты если есть
-                    card_last_four = order.get("card_last_four", "")
-                    card_info = f"\n💳 **Карта:** {card_last_four}" if card_last_four else ""
-
-                    # Генерируем ссылку на Яндекс.Карты для адреса
-                    yandex_maps_link = ""
-                    if delivery == "delivery" and address and address != "Не указан":
-                        # Кодируем адрес для URL (добавляем Ташкент если нет)
-                        import urllib.parse
-                        address_for_map = address if "ташкент" in address.lower() else f"Ташкент {address}"
-                        encoded_address = urllib.parse.quote(address_for_map)
-                        yandex_maps_link = f"\n\n🗺️ [📍 Открыть адрес на Яндекс.Картах](https://yandex.uz/maps/?text={encoded_address})"
-
-                    msg_text = (
-                        f"🔔 **НОВЫЙ ЗАКАЗ #{order_id}!**\n\n"
-                        f"👤 **Покупатель:** {name}\n"
-                        f"📞 **Телефон:** [`{phone}`](tel:{phone.replace(' ', '')})\n"
-                        f"📦 **Тип получения:** {deliv_str}\n"
-                        f"📍 **Адрес:** {address}{yandex_maps_link}\n"
-                        f"💳 **Оплата:** {pay_str}{card_info}\n\n"
-                        f"🛍️ **Состав заказа:**\n{items_str}\n\n"
-                        f"💰 **Итого к оплате:** {total:,} сум"
-                    ).replace(",", " ")
-
-                    # Создаем inline кнопки для подтверждения/отклонения
-                    keyboard = InlineKeyboardMarkup([
-                        [
-                            InlineKeyboardButton("✅ Подтвердить", callback_data=f"order_confirm_{order_id}"),
-                            InlineKeyboardButton("❌ Отклонить", callback_data=f"order_reject_{order_id}")
-                        ]
-                    ])
-
-                    # Отправляем уведомление администратору с кнопками
-                    await app.bot.send_message(
-                        chat_id=admin_chat_id,
-                        text=msg_text,
-                        parse_mode="Markdown",
-                        reply_markup=keyboard
-                    )
-                    log.info("Отправлено уведомление о заказе #%s администратору", order_id)
-                    
-                    # Обновляем статус заказа, чтобы не слать повторно
-                    supabase.table("orders").update({"status": "notified"}).eq("id", order_id).execute()
+                    await process_and_send_order(app.bot, order)
                     
             await asyncio.sleep(20) # Проверяем каждые 20 секунд
         except Exception as exc:
@@ -1095,27 +1131,27 @@ async def handle_web(request):
         try:
             data = await request.json()
             # Supabase отправляет данные в поле 'record' при INSERT
-            order_data = data.get('record', {})
+            order_data = data.get('record', {}) or {}
             
-            # Собираем красивый текст уведомления (измени названия полей под свою таблицу orders, если они другие)
-            order_id = order_data.get('id', 'Неизвестно')
-            customer_name = order_data.get('customer_name', 'Не указано')
-            total_price = order_data.get('total_price', '0')
+            order_id = order_data.get('id')
+            if order_id:
+                # Получаем полную информацию о заказе из БД
+                res = supabase.table("orders").select("*").eq("id", order_id).execute()
+                if res.data:
+                    order = res.data[0]
+                    # Если статус еще pending, обрабатываем
+                    if order.get("status") == "pending":
+                        from telegram import Bot
+                        bot = Bot(token=TELEGRAM_TOKEN)
+                        success = await process_and_send_order(bot, order)
+                        if success:
+                            return web.Response(text="Order processed", status=200)
+                        else:
+                            return web.Response(text="Failed to send notification", status=500)
+                    else:
+                        return web.Response(text="Order already processed", status=200)
             
-            text = f"🛍 **Новый заказ на сайте!**\n\n" \
-                   f"№ Заказа: {order_id}\n" \
-                   f"Покупатель: {customer_name}\n" \
-                   f"Сумма: {total_price} руб."
-            
-            # Получаем объект бота из нашего telegram-приложения
-            # (Убедись, что переменная app доступна или замени на отправку через токен)
-            from telegram import Bot
-            bot = Bot(token=TELEGRAM_TOKEN)
-            
-            # Отправляем админу (вместо ADMIN_ID поставь свой ID в Telegram цифрами, например 7348509108)
-            await bot.send_message(chat_id=7348509108, text=text, parse_mode="Markdown")
-            
-            return web.Response(text="Order processed", status=200)
+            return web.Response(text="No pending order ID found", status=400)
         except Exception as e:
             log.error(f"Ошибка при обработке вебхука заказа: {e}")
             return web.Response(text="Error", status=500)
@@ -1160,6 +1196,9 @@ async def on_startup(app_web):
     await tg_app.initialize()
     await tg_app.start()
     await tg_app.updater.start_polling()
+    
+    # Запускаем post_init вручную, чтобы активировать фоновые задачи проверки заказов
+    await post_init(tg_app)
     
     # Сохраняем в приложении aiohttp, чтобы остановить при завершении
     app_web['tg_app'] = tg_app
