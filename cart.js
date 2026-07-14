@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
 
-      <div class="bg-[#1A1A1A] text-[#FAF6F0] p-4 mb-6 border-2 border-[#D4AF37]">
+      <div id="payment-important-note" class="bg-[#1A1A1A] text-[#FAF6F0] p-4 mb-6 border-2 border-[#D4AF37]">
         <p class="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold mb-2">⚠️ ВАЖНО:</p>
         <p class="text-sm font-bold">ПОСЛЕ ОПЛАТЫ ПОЗВОНИТЕ:</p>
         <a href="tel:+998908257337" class="text-xl font-bold text-[#D4AF37] block mt-1">+998 90 825 73 37</a>
@@ -650,6 +650,16 @@ async function submitOrder() {
     return;
   }
 
+  const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+  if (!cleanPhone.startsWith('+998')) {
+    alert('Пожалуйста, укажите номер телефона в международном формате, начиная с +998 (например, +998 90 123 45 67).');
+    return;
+  }
+  if (cleanPhone.length !== 13 || !/^\+998\d{9}$/.test(cleanPhone)) {
+    alert('Пожалуйста, введите корректный номер телефона (код страны +998 и 9 цифр номера).');
+    return;
+  }
+
   if (delivery === 'delivery' && !address) {
     console.warn('⚠️ Не указан адрес доставки');
     alert('Пожалуйста, укажите точный адрес доставки по Ташкенту.');
@@ -759,13 +769,20 @@ function openPaymentModal(orderId, name, total, payment) {
   const btnClick = document.getElementById('btn-click-pay');
   const btnPayme = document.getElementById('btn-payme-pay');
   const cardDetailsCard = document.getElementById('payment-details-card');
+  const importantNote = document.getElementById('payment-important-note');
 
   btnClick.classList.add('hidden');
   btnPayme.classList.add('hidden');
   cardDetailsCard.classList.add('hidden');
+  if (importantNote) {
+    importantNote.classList.add('hidden');
+  }
 
   if (payment === 'click' && CONFIG.PAYMENT_CARD) {
     cardDetailsCard.classList.remove('hidden');
+    if (importantNote) {
+      importantNote.classList.remove('hidden');
+    }
     btnClick.href = `https://click.uz/clickme?card=${CONFIG.PAYMENT_CARD.replace(/\s/g, '')}&amount=${total}`;
     btnClick.classList.remove('hidden');
     // Блокировка кнопки на 5 секунд
@@ -790,6 +807,9 @@ function openPaymentModal(orderId, name, total, payment) {
     }, 1000);
   } else if (payment === 'payme' && CONFIG.PAYMENT_CARD) {
     cardDetailsCard.classList.remove('hidden');
+    if (importantNote) {
+      importantNote.classList.remove('hidden');
+    }
     btnPayme.href = `https://payme.uz/card/${CONFIG.PAYMENT_CARD.replace(/\s/g, '')}/${total}`;
     btnPayme.classList.remove('hidden');
     // Блокировка кнопки на 5 секунд
