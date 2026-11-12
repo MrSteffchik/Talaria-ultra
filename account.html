@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Аккаунт — Talaria</title>
-  <link rel="stylesheet" href="account.css">
+  <link rel="stylesheet" href="account.css?v=2">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js"></script>
-  <script defer src="account.js"></script>
+  <script defer src="account.js?v=2"></script>
 </head>
 <body>
-  <header><a href="index.html">TALARIA</a><a href="catalog.html">Каталог</a></header>
+  <header><a class="brand" href="index.html">TALARIA</a><a href="catalog.html">В каталог ↗</a></header>
   <main>
     <h1>Аккаунт</h1>
     <p id="status" role="status" aria-live="polite"></p>
@@ -24,24 +24,33 @@
     </form>
     <section id="session" hidden>
       <p id="identity"></p>
-      <button id="logout" type="button">Выйти</button>
+      <button id="logout" class="secondary" type="button">Выйти</button>
     </section>
     <section id="admin" hidden>
-      <h2>Товары</h2>
-      <label>Товар для редактирования<select id="products"><option value="">Новый товар</option></select></label>
+      <div class="section-head"><h2>Товары</h2><button id="new" type="button">+ Добавить товар</button></div>
+      <div class="workspace">
+      <aside class="panel">
+        <label>Поиск по каталогу<input id="search" type="search" placeholder="Название или номер"></label>
+        <p id="count"></p>
+        <div id="products" aria-label="Товары"></div>
+      </aside>
       <form id="product">
+        <h3 id="editor-title">Новый товар</h3>
         <label>Название<input name="title" required></label>
+        <div class="field-row">
         <label>Цена<input name="price" required placeholder="390.000 сум"></label>
         <label>Размеры<input name="sizes" placeholder="39, 40, 41"></label>
+        </div>
         <label>Цвет<input name="color"></label>
         <label>Описание<textarea name="description" rows="4"></textarea></label>
         <label>Ссылки на фото, по одной на строку<textarea name="photos" rows="3"></textarea></label>
         <label class="check"><input type="checkbox" name="is_available" checked> В наличии</label>
         <div class="actions">
           <button type="submit">Сохранить</button>
-          <button type="button" id="remove" disabled>Удалить</button>
+          <button type="button" class="danger" id="remove" disabled>Удалить</button>
         </div>
       </form>
+      </div>
     </section>
   </main>
 </body>
