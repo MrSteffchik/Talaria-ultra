@@ -1,0 +1,16 @@
+:root { color-scheme: dark; font: 16px/1.5 Georgia, serif; background: #141210; color: #f4ede3; }
+body { margin: 0; }
+header { display: flex; justify-content: space-between; padding: 1rem max(1rem, calc((100% - 42rem) / 2)); border-bottom: 1px solid #494034; }
+a { color: #e3c478; }
+main { max-width: 42rem; margin: 2rem auto; padding: 0 1rem 3rem; }
+section { margin-top: 2rem; }
+form { display: grid; gap: 1rem; }
+label { display: grid; gap: .25rem; }
+input, select, textarea, button { font: inherit; padding: .65rem; border: 1px solid #74654e; border-radius: .25rem; }
+input, select, textarea { background: #211d18; color: inherit; }
+#products { margin-bottom: 1rem; }
+.check, .actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+button { background: #e3c478; color: #19130b; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+#status { color: #e3c478; }
+[hidden] { display: none !important; }
