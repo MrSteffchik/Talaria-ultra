@@ -339,7 +339,12 @@ def parse_caption(text: str, entities=None) -> dict | None:
             continue
 
         if title is None:
-            title = line
+            candidate = clean_text_fully(line)
+            if not any(char.isalpha() for char in candidate):
+                continue
+            if re.fullmatch(r"новая\s+коллекция[!\s]*", candidate, re.IGNORECASE):
+                continue
+            title = candidate
         else:
             desc_lines.append(line)
 
@@ -474,87 +479,72 @@ def _find_product_for_reply(replied: Message) -> dict | None:
     return res.data[0] if res.data else None
 
 
-async def handle_availability_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg: Message = update.message
-    if not msg or not msg.text or not msg.reply_to_message:
-        return
+def _post_scope(msg: Message) -> tuple:
+    sender = msg.sender_chat or msg.from_user
+    return msg.chat_id, msg.message_thread_id, sender.id if sender else None
 
-    text = msg.text.strip()
-    action, size_nums = parse_availability_command(text)
+
+_recent_posts: dict[tuple, tuple[int, int, float]] = {}
+
+
+def _remember_post(msg: Message, product_id: int) -> None:
+    import time
+    now = time.monotonic()
+    for key, (_, _, seen) in list(_recent_posts.items()):
+        if now - seen > 600:
+            del _recent_posts[key]
+    _recent_posts[_post_scope(msg)] = (product_id, msg.message_id, now)
+
+
+async def handle_availability_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    import time
+
+    msg = update.effective_message
+    if not msg or not msg.text:
+        return
+    action, size_nums = parse_availability_command(msg.text)
     if not action:
         return
 
-    product = _find_product_for_reply(msg.reply_to_message)
+    if msg.chat.type != "private":
+        if msg.sender_chat:
+            if msg.sender_chat.id != msg.chat_id:
+                return
+        elif not msg.from_user or msg.from_user.is_bot:
+            return
+        elif msg.from_user.id not in ADMIN_IDS:
+            member = await context.bot.get_chat_member(msg.chat_id, msg.from_user.id)
+            if member.status not in ("creator", "administrator"):
+                return
+    elif not msg.from_user or msg.from_user.id not in ADMIN_IDS:
+        return
+
+    replied = msg.reply_to_message
+    product = _find_product_for_reply(replied) if replied and replied.photo else None
+    if not product and (not replied or parse_availability_command(replied.text)[0]):
+        recent = _recent_posts.get(_post_scope(msg))
+        if recent and recent[1] < msg.message_id and time.monotonic() - recent[2] <= 600:
+            result = supabase.table("products").select("id,sizes").eq("id", recent[0]).limit(1).execute()
+            product = result.data[0] if result.data else None
     if not product:
-        await msg.reply_text(
-            "⚠️ Товар не найден. Ответьте на **фото с подписью**, "
-            "которое бот уже добавил в каталог.\n"
-            "Примеры: `продано`, `продано 42`, `в наличии 41`",
-            parse_mode="Markdown",
-        )
+        log.info("Команда наличия без связанного товара, сообщение %s", msg.message_id)
         return
 
-    pid = product["id"]
-    title = product.get("title") or "Модель"
-    current_sizes = parse_sizes_field(product.get("sizes"))
-
+    current = parse_sizes_field(product.get("sizes"))
     if action == "sold" and size_nums:
-        if not current_sizes:
-            await msg.reply_text(
-                f"⚠️ У «{title}» в каталоге **не указаны размеры**.\n"
-                "Напишите просто **продано** — снимется вся модель.",
-                parse_mode="Markdown",
-            )
+        remaining = [size for size in current if size not in size_nums]
+        if remaining == current:
             return
-
-        to_remove = [s for s in size_nums if s in current_sizes]
-        if not to_remove:
-            have = format_sizes_field(current_sizes) or "—"
-            ask = ", ".join(size_nums)
-            await msg.reply_text(
-                f"⚠️ Размер(ы) **{ask}** не найдены.\nВ каталоге сейчас: {have}",
-                parse_mode="Markdown",
-            )
-            return
-
-        remaining = [s for s in current_sizes if s not in to_remove]
-        update: dict = {"sizes": format_sizes_field(remaining)}
+        changes = {"sizes": format_sizes_field(remaining)}
         if not remaining:
-            update["is_available"] = False
-        supabase.table("products").update(update).eq("id", pid).execute()
-
-        removed = ", ".join(to_remove)
-        if remaining:
-            left = format_sizes_field(remaining)
-            reply = f"✅ «{title}»: снят размер **{removed}**.\nОстались: {left}"
-        else:
-            reply = f"✅ «{title}»: размер **{removed}** продан.\nВся модель **снята с сайта**."
-        await msg.reply_text(reply, parse_mode="Markdown")
-        log.info("Товар id=%s сняты размеры %s, осталось %s", pid, removed, remaining)
-        return
-
-    if action == "available" and size_nums:
-        merged = sorted(set(current_sizes) | set(size_nums), key=int)
-        supabase.table("products").update({
-            "sizes": format_sizes_field(merged),
-            "is_available": True,
-        }).eq("id", pid).execute()
-        added = ", ".join(size_nums)
-        all_sizes = format_sizes_field(merged)
-        reply = f"✅ «{title}»: размер **{added}** снова в наличии.\nРазмеры: {all_sizes}"
-        await msg.reply_text(reply, parse_mode="Markdown")
-        log.info("Товар id=%s возвращены размеры %s", pid, added)
-        return
-
-    # Вся модель
-    is_avail = action == "available"
-    supabase.table("products").update({"is_available": is_avail}).eq("id", pid).execute()
-    if is_avail:
-        reply = f"✅ «{title}» снова **в каталоге** на сайте."
+            changes["is_available"] = False
+    elif action == "available" and size_nums:
+        merged = sorted(set(current) | set(size_nums), key=int)
+        changes = {"sizes": format_sizes_field(merged), "is_available": True}
     else:
-        reply = f"✅ «{title}» **снята с сайта** (продано)."
-    await msg.reply_text(reply, parse_mode="Markdown")
-    log.info("Товар id=%s is_available=%s (команда: %s)", pid, is_avail, text)
+        changes = {"is_available": action == "available"}
+    supabase.table("products").update(changes).eq("id", product["id"]).execute()
+    log.info("Товар id=%s: обновлено наличие (%s)", product["id"], action)
 
 
 # ─── Обработчик сообщений ─────────────────────────────────────────────────────
@@ -608,41 +598,49 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         .execute()
     )
     if dup.data:
+        _remember_post(msg, dup.data[0]["id"])
         return
 
     parsed["telegram_message_id"]     = message_id
     parsed["telegram_media_group_id"] = media_group_id
     parsed["photos"]                  = [photo_url] if photo_url else []
 
-    # Тот же товар повторно в группе (два поста с одной подписью) — дополняем фото
-    vk = parsed.get("variant_key")
-    pcolor = parsed.get("color")
-    dup_variant_data = None
-    try:
-        dup_q = supabase.table("products").select("id, photos").eq("variant_key", vk)
-        if pcolor:
-            dup_q = dup_q.eq("color", pcolor)
-        else:
-            dup_q = dup_q.is_("color", "null")
-        dup_variant = dup_q.limit(1).execute()
-        dup_variant_data = dup_variant.data
-    except Exception as e:
-        log.warning("Не удалось проверить дубликаты (возможно, отсутствуют колонки variant_key/color в БД): %s", e)
+    # Повторная публикация с тем же фото задаёт актуальные размеры.
+    # Имя файла содержит стабильный Telegram file_unique_id.
+    from urllib.parse import urlsplit
 
-    if dup_variant_data:
-        row = dup_variant_data[0]
-        photos = list(row.get("photos") or [])
-        if photo_url and photo_url not in photos:
-            photos.append(photo_url)
-            try:
-                supabase.table("products").update({"photos": photos}).eq("id", row["id"]).execute()
-                log.info("Дубликат объединён с id=%s (variant_key=%s)", row["id"], vk)
-            except Exception as exc:
-                log.error("Ошибка при обновлении фото дубликата: %s", exc)
+    result = (
+        supabase.table("products").select("id,photos")
+        .contains("photos", [photo_url]).limit(1).execute()
+    ) if photo_url else None
+    matches = result.data if result else []
+    if not matches:
+        candidates = (
+            supabase.table("products").select("id,photos")
+            .eq("title", parsed["title"]).eq("price", parsed["price"])
+            .order("id", desc=True).execute()
+        )
+        suffix = f"_{best.file_unique_id}.jpg"
+        matches = [
+            item for item in candidates.data
+            if any(urlsplit(url).path.endswith(suffix) for url in item.get("photos") or [])
+        ]
+    if matches:
+        row = matches[0]
+        changes = {
+            key: parsed[key] for key in (
+                "sizes", "description", "telegram_message_id",
+                "telegram_media_group_id",
+            )
+        }
+        changes["is_available"] = True
+        supabase.table("products").update(changes).eq("id", row["id"]).execute()
+        _remember_post(msg, row["id"])
         return
 
     try:
-        supabase.table("products").insert(parsed).execute()
+        created = supabase.table("products").insert(parsed).execute()
+        _remember_post(msg, created.data[0]["id"])
         log.info("Сохранён товар: %s | %s | %s", parsed["title"], parsed.get("color"), parsed["price"])
     except Exception as exc:
         # Если колонок variant_key/color нет в БД, пробуем вставить без них
@@ -652,7 +650,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             backup_parsed.pop("variant_key", None)
             backup_parsed.pop("color", None)
             try:
-                supabase.table("products").insert(backup_parsed).execute()
+                created = supabase.table("products").insert(backup_parsed).execute()
+                _remember_post(msg, created.data[0]["id"])
                 log.info("Сохранён товар (без variant_key/color): %s | %s", backup_parsed["title"], backup_parsed["price"])
             except Exception as retry_exc:
                 log.error("Ошибка сохранения товара при повторной попытке: %s", retry_exc)
@@ -1187,7 +1186,7 @@ async def on_startup(app_web):
     tg_app.add_handler(CallbackQueryHandler(handle_order_callback))
     
     # Message handler for checking commands on replies (sold, available etc.)
-    tg_app.add_handler(MessageHandler(filters.REPLY & filters.TEXT, handle_availability_reply))
+    tg_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_availability_reply))
     
     # Message handler for channel posts and messages with photos
     tg_app.add_handler(MessageHandler(filters.PHOTO, handle_message))
